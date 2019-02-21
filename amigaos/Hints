@@ -1,0 +1,31 @@
+This file is part of the Amiga-IxEmul version of GNU-Emacs-20.2
+
+List of various simple problems + solutions with Emacs on AmigaOS.
+
+Hangs in startup when Miami (TCP/IP) is active:
+ * if ixtrace shows it hangs in gethostbyname(), then it may help to add
+the name of your host to Miami's host-database like this:
+
+  IP         Name        Aliases
+127.0.0.1   localhost  skat.in-brb.de
+                       ^^^^^^^^^^^^^^<=the name of your Amiga
+
+TeX mode and PasTeX:
+ * Ixemul-47 does doubling backslashes (\) in commandline for
+non-Ixemul programs.  Therefore it's not possible to pass some TeX
+commands via commandline to non-Ixemul PasTeX (like on
+Meeting-Pearls-III).  A possible workaround is to use a non-Ixemul
+command-shell to execute a script which contains the TeX command line.
+(See the file "../amigaos/examples/latex")
+
+ComInt mode (used by shell, gud, ...)
+ * comint-send-eof closes the input channel for the interpreter
+(shell).  (Its sometimes useful to redirect input to "/con").
+
+MultiUser related problems:
+ * Patch the string "Home" in "LIBS:multiuser.library" to "HOME".
+ * Use "env:HOSTNAME" instead "env:HostName".
+
+No AREXX port:
+ * Autodoc.rexx cannot control Emacs anymore but you can use:
+     cd /gg/osinclude ; find -name "*.h" | xargs etags

@@ -1,0 +1,39 @@
+#! /bin/sh
+#
+# latex - workaround to start non-IxEmul TeX program keeping single '\'
+
+
+if  [ -d /TeX ] ||
+	( [ -d /Meeting_Pearls_III ] &&
+	  /C/Assign TeX: Meeting_Pearls_III:Pearls/texmf ); then
+  :
+else
+  echo "$0:TeX: Unknown volume or assign" >&2
+  return 1;
+fi
+
+## We cannot use `_sh -c "_sh -c ..."' because of the nested double
+## quote.
+
+TMP=/t/latex.$$
+TMP_AMIGA=t:latex.$$
+#trap "rm -f $TMP $TMP.* $TMP-*" 0
+
+## handle SIGKILL and SIGINT (this works not for interactive PasTeX,
+## but maybe for \nonstopmode (untested!)
+trap ". $TMP.kill" 9
+trap ". $TMP.kill" 3
+
+echo "
+.key dummy
+.bra «
+.ket »
+Echo C:Break «\$\$» C >$TMP_AMIGA.kill
+set echo on
+TeX:bin/virtex &glplain $*
+"  >$TMP.bat
+
+## what is better: delete the temporary or use exec to get rid the
+## superflous sh process?
+
+/C/_sh -c "execute $TMP_AMIGA.bat"

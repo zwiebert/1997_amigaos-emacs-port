@@ -1,0 +1,339 @@
+This is a fixed version of /gg/lib/gcrt0.o (the IxEmul-startup used
+for profiling with /bin/gprof ("-pg" option of /bin/gcc))
+
+It tries to fix at least 2 bugs.  Furthermore it uses a different
+memory allocator than malloc().  This is because some programs provide
+their own malloc() which is already cleaned up when _mcleanup is
+called.  (Sorry, the memory allocator needs V37 or amiga.lib. Beware,
+it is not checked).
+
+Maybe there is a better way, like a second link-name for ixemuls own
+malloc() (maybe ix_malloc()) or an earlier call to _mcleanup (before
+all user installed atexit() functions)
+
+*** libsrc/gmon.c.orig	Mon Jan 12 08:00:00 1998
+--- libsrc/gmon.c	Mon Jun  8 22:25:14 1998
+***************
+*** 42,47 ****
+--- 42,58 ----
+  
+  extern void start_text () asm ("exec");
+  
++ /* There must be some other profile related code somewhere (in
++    ixemul-library?) depending on: ``__builin_return_address(0) ==
++    selfpc''.  The A1 saving code (Is A1 currently used somewhere?)
++    leads to wrong results in "calls" field of gprof.out (== number a
++    function is invoked) and other problems (all "leaf" functions are
++    missing).
++ 
++    -bw/08-Jun-98 */
++ #define GMON__TRASH_A1 1
++ 
++ #ifndef GMON__TRASH_A1
+  asm ("
+  	.globl	mcount
+  mcount:	movel	a1,sp@-		| Save A1 as it might be used to store the
+*************** mcount:	movel	a1,sp@-		| Save A1 as it m
+*** 49,54 ****
+--- 60,75 ----
+  	movel	sp@+,a1
+  	rts
+  ");
++ #define GET_SELF_PC() (__builtin_return_address (1))
++ #define GET_FROM_PC() (__builtin_return_address (2))
++ #else /* not GMON__TRASH_A1 */
++ asm ("
++ 	.globl mcount
++ mcount:	jra _mcount		| goto C level mcount()
++ ");
++ #define GET_SELF_PC() (__builtin_return_address (0))
++ #define GET_FROM_PC() (__builtin_return_address (1))
++ #endif /* not GMON__TRASH_A1 */
+  
+  void moncontrol(int mode);
+  
+*************** static int	s_scale;
+*** 72,78 ****
+  #define		SCALE_1_TO_1	0x10000L
+  
+  #define	MSG "No space for profiling buffer(s)\n"
+! 
+  static inline void *
+  alloc(int s)
+  {
+--- 93,113 ----
+  #define		SCALE_1_TO_1	0x10000L
+  
+  #define	MSG "No space for profiling buffer(s)\n"
+! 
+! #ifndef USE_PLAIN_MALLOC
+! #define MEMPOOL_CREATE() (mem_pool = CreatePool (0, 1024 * 100, 1024 * 20))
+! #define MEMPOOL_DESTROY() ((void)(DeletePool (mem_pool), (mem_pool = 0)))
+! static void *mem_pool;
+! static inline void *
+! alloc (unsigned long s)
+! {
+!   void *res;
+!   res = AllocPooled (mem_pool, s);
+!   if (res)
+!     bzero (res, s);
+!   return res;
+! }
+! #else
+  static inline void *
+  alloc(int s)
+  {
+*************** alloc(int s)
+*** 81,92 ****
+--- 116,135 ----
+      bzero (res, s);
+    return res;
+  }
++ #endif
+  
++ 
+  void monstartup(char *lowpc, char *highpc)
+  {
+      int			monsize;
+      char		*buffer;
+      register int	o;
++     
++     if (!MEMPOOL_CREATE ())
++       {
++ 	write (2 , MSG , sizeof(MSG)-1);
++ 	return;
++       }
+  
+  	/*
+  	 *	round lowpc and highpc to multiples of the density we're using
+*************** void monstartup(char *lowpc, char *highp
+*** 102,113 ****
+      monsize = (s_textsize / HISTFRACTION) + sizeof(struct phdr);
+      buffer = alloc( monsize );
+      if ( buffer == 0 ) {
+! 	write( 2 , MSG , sizeof(MSG) );
+  	return;
+      }
+      froms = (unsigned short *) alloc ( s_textsize / HASHFRACTION );
+      if ( froms == 0 ) {
+! 	write( 2 , MSG , sizeof(MSG) );
+  	froms = 0;
+  	return;
+      }
+--- 145,156 ----
+      monsize = (s_textsize / HISTFRACTION) + sizeof(struct phdr);
+      buffer = alloc( monsize );
+      if ( buffer == 0 ) {
+! 	write( 2 , MSG , sizeof(MSG)-1 );
+  	return;
+      }
+      froms = (unsigned short *) alloc ( s_textsize / HASHFRACTION );
+      if ( froms == 0 ) {
+! 	write( 2 , MSG , sizeof(MSG)-1 );
+  	froms = 0;
+  	return;
+      }
+*************** void monstartup(char *lowpc, char *highp
+*** 119,125 ****
+      }
+      tos = (struct tostruct *) alloc( tolimit * sizeof( struct tostruct ) );
+      if ( tos == 0 ) {
+! 	write( 2 , MSG , sizeof(MSG) );
+  	froms = 0;
+  	tos = 0;
+  	return;
+--- 162,168 ----
+      }
+      tos = (struct tostruct *) alloc( tolimit * sizeof( struct tostruct ) );
+      if ( tos == 0 ) {
+! 	write( 2 , MSG , sizeof(MSG)-1 );
+  	froms = 0;
+  	tos = 0;
+  	return;
+*************** void _mcleanup(void)
+*** 190,195 ****
+--- 233,239 ----
+  	}
+      }
+      close( fd );
++     MEMPOOL_DESTROY ();
+  }
+  
+  void mcount(void)
+*************** void mcount(void)
+*** 207,216 ****
+  
+  	/* selfpc = pc pushed by mcount call.
+  	   This identifies the function that was just entered.  */
+! 	selfpc = (char *) __builtin_return_address (0);
+  	/* frompcindex = pc in preceding frame.
+  	   This identifies the caller of the function just entered.  */
+! 	frompcindex = (void *) __builtin_return_address (1);
+  	/*
+  	 *	check that we are profiling
+  	 *	and that we aren't recursively invoked.
+--- 251,260 ----
+  
+  	/* selfpc = pc pushed by mcount call.
+  	   This identifies the function that was just entered.  */
+! 	selfpc = (char *) GET_SELF_PC ();
+  	/* frompcindex = pc in preceding frame.
+  	   This identifies the caller of the function just entered.  */
+! 	frompcindex = (void *) GET_FROM_PC ();
+  	/*
+  	 *	check that we are profiling
+  	 *	and that we aren't recursively invoked.
+
+
+Here comes a binary for m68k-amigaos (68020 softfloat):
+
+begin 644 lib/gcrt0.o
+M``$!!P``"J````(T````)````[0````````%<````#!@``'X```!!P``````
+M``````````````````%*`````````````$Y5```@;0`(+RT`$$*G+RT`#$*G
+M+P@@:/P03I!.74YU<&EN='5I+FQI8G)A<GD`:6YT=6ET:6]N+FQI8G)A<GD`
+M06)O<G0`<W1A<G1U<"!M97-S86=E``!.50``2.<P.B1M``@F+0`,*&T`$$?M
+M`!BT_```9QA"ITAY````1B\#(&S^"$Z0)`#>_``,8!(L>``$0_D```!5<`!.
+MKOW8)`!*@F=*M/P``&<B0?D```R4(*T`%"\+2&C_]B\"80#_0B\"+P,@;/X4
+M3I!@(D/Y```,M"*M`!0L0I'(TOS_])7*3J[]M"QX``0B0DZN_F),[5P,_^A.
+M74YU3F5E9"!A="!L96%S="!V97)S:6]N(#0W(&]F(&EX96UU;"YL:6)R87)Y
+M+@!.50``(&T`"")M`!BS_'!/4P!7P$B`2,!$@"((2H!G!"(H`"XCP0`````C
+MR`````!*@&<*#&@`+@`68PI@*`QH`"X`%&(@2'D```$>+SD`````+SD`````
+M+P!A`/[8(#P``!0`8#0CR0``#'8O.0````!(>0````!.N0````!(>0``!'Q(
+M>0``#&8O+0`4+RT`$"\M``QA``.`3EU.=6EX96UU;"YL:6)R87)Y`"]-`$Y5
+M__Q(YSPZ*`@J``R%<$]3`%?`2(`T`$C"1(*5RIG,)FT`"'8`0JW__$J"9SHD
+M:P`N*&L!KDAY```,>B\*(&SYE$Z04$]*0&8&<`!@``&H2'@`+TAY```!Z"\*
+M(&S^"$Z0WOP`#&`0+'@`!$/Y```!Z'`O3J[]V$J`9P`!`"!`2H)G!"!H`"XC
+MP``````CR`````!*@F<J(\L`````(\L`````(\H`````(\H`````(\P`````
+M(_QP3U,````,=F`&0KD```QV+SD`````2'D`````3KD`````4$]*@F<P('D`
+M````0J=(>``!2&W__$AY```!]R\((&C]V$Z0)@#>_``49P@H+?_\681@`G@`
+M2'D```QF2'D```1\+SD```QB+SD`````+P4O!&$``B0D0-[\`!A*@F<R2H-G
+M$B!Y`````"\#+P@@:/V<3I!03R!Y`````"\Y`````"\Y`````"!H_A1.D%!/
+M8'0L>``$(GD`````3J[^8F!D2H)F"B!X``0D:`$48`*5RDAY```!'B\Y````
+M`"\Y`````"\"80#\XM[\`!!*@F8P2JH`K&8J+'@`!$ZN_WS4_`!<+'@`!"!*
+M3J[^@"QX``0@2DZN_HPL>``$(D!.KOZ&-'P`%$J"9Q`@>0`````O"B\((&C\
+M-$Z0(`I,[5P\_]Q.74YU3E4``"(M``A(>0````!(>0``#%Y(>0``"J1(>0``
+M"J!P`$J!9P8@/```#&8O`'``2H%G!B`\```,;B\`2'D```QN2'D`````2'D`
+M````2'D`````2'D`````2'D`````2'@`#$ZY`````"/Y```````````C^0``
+M````````3EU.=4Y5``!(YS`B)&T`#"8M`!!"IV$`_VHCPP``#&Y(>0``!_).
+MN0````!(>0````!(>0``!'QA``#LWOP`$"`29RI(>``O+P!.N0`````@0"/(
+M```,<E!/9PI22"/(```,<F!6(](```QR8$[>_/_8(`\CSP``#'(,N7!/4P``
+M``QV9AH@>0````!(>``H+P`O""!H]F1.D-[\``Q@#BQY`````"(/="A.KOW`
+M2D!F"B/\````)```#'(O`R\*+RT`"$ZY`````$SM1`S_\$Y=3G4@.0````!G
+M```(3KD`````3OD`````(#D`````9P``"$ZY`````$[Y`````&```X1.;R!S
+M<&%C92!F;W(@<')O9FEL:6YG(&)U9F9E<BAS*0H`3E4``$CG/CHJ+0`(*"T`
+M#"QY`````'``(CP``9``)#P``%``3J[]2"/````,]&=0?/S*AB/%```,R"($
+M5H%X_,B!(\0```S,(@22A2/!```,T.*)*$%%[``,+'D`````($`@"DZN_3PD
+M`&<,+PHO`$ZY`````%!/)D*V_```9AA(>``A2'D```5\2'@``DZY`````&``
+M`9HF.0``#-`L>0`````@>0``#/0@`TZN_3PD`&<,+P,O`$ZY`````%!/(\(`
+M``SD9AY(>``A2'D```5\2'@``DZY`````$*Y```,Y&```4Q(>``R+SD```S0
+M3KD`````4$\CP```#,1\,;R`;0I\,B/&```,Q&`2#(```/_^;PHC_```__X`
+M``S$(CD```S$(`'G@-"!)`#4@2QY`````"!Y```,]"`"3J[]/"Q`2H!G#"\"
+M+P!.N0````!03R/.```,P&8D2'@`(4AY```%?$AX``).N0````!"N0``#.1"
+MN0``#,!@``"R0FX`""/+```,["/*```,Z"`\`````"A%F<`FC"P$G(`G1@`$
+M)TH`"-3\__2T_```;WXD!)2%M(IO9$WY`````"\*+P).EE!/#(```/__;PI\
+M`2/&```,\&!.#(````#_;PHO`"\\``$``&`F#((`?___;PH@"N"`+P`O`F`(
+M(`+A@"\*+P!.EEA/+H`O/`$```!.EE!/(\````SP8`HC_``!``````SP2'@`
+M`6$``G!,[5Q\_]Q.74YU9VUO;BYO=70`;6-O=6YT.B!G;6]N+F]U=`!.5?_T
+M2.<X(D*G80`"/DAX`;9(>0``!]A.N0`````F`-[\``QL$$AY```'X4ZY````
+M`&```+@O.0``#.@O.0``#.PO`TZY`````"`Y```,T"@`XHR=SM[\``RXCF]P
+M('D```SD0_;H`#(PF`!G6B`Y```,R-"))``$@@`````"@0``__]G0BM"__0@
+M>0``#,`@`>>`T($D0-7!*W"H`/_X*W"H!/_\2'@`#$AM__0O`TZY`````-[\
+M``P@>0``#,!"@3(PJ`AFOE).N(YND"\#3KD`````+'D`````('D```ST3J[]
+M0D*Y```,]$SM1!S_X$Y=3G5M8V]U;G0Z('1O<R!O=F5R9FQO=PH`3E4``$CG
+M,"`D+0`$(%4D:``$2KD```R\9@`!&G8!(\,```R\('D```S<((($@@````"5
+M^0``#,BU^0``#-!B``#2(`IV_L"#)'D```SDU<!"@3(29D`@>0``#,`P*``(
+M-@!20S%#``A20#(`LKD```S$;```IC2!(`'G@-"!T($@>0``#,#1P"""=@$A
+M0P`$0F@`"&!\(`'G@-"!T($@>0``#,#1P+209@92J``$8&(P*``(9C0@>0``
+M#,`P*``(-@!20S%#``A20$*!,@"RN0``#,1L1"`!YX#0@="!T<`@@G8!(4,`
+M!&`B(DC`_``*('D```S`T<"TD&:T4J@`!$*!,BD`"#-H``@`"#%2``@T@5.Y
+M```,O&`:4KD```R\2'@`%DAY```(Z$AX``).N0````!,[00,__1.74YU3E4`
+M`$JM``AG0"\Y```,\"\Y```,R'+TTKD```SH+P%R#-*Y```,["\!3KD`````
+M(\````S<9@HC_```#.````S<0KD```R\8!9"IT*G0J="ITZY`````'(#(\$`
+M``R\3EU.=0`````````%````!````L`````!````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````````````````````````````````````````````````````````````
+M````_____P``````````````````#&H````D`````(`1``4````-````````
+M````'@````$```!M`````````&<````````````````````4`````````&T`
+M````````9P````,```````````````````````````````0```0P````"```
+M!5`````,```&4````!````=0````&```!$````"@```$0````+H```1`````
+MT@``!D````#T```&0````7```!=0```!=@``&%````&2```$0````9@``!E0
+M```!G@``&E````&R```&0````;@``!M0```!O@``'%````'*```$0````=``
+M``9````",@``!D````)0```$0````F@```1````"A```&%````**```74```
+M`I0``"%0```"F@``(E````*@```:4````J8``"-0```"K```&5````*V```&
+M0````KX```9````"Q```&U````+*```<4````MP``")0```"[```!$````,,
+M```&0````Q(```1````#&```!D````,>```D4````SH``")0```#3```&5``
+M``-2```84````U@``"-0```#;```%U````.(```$0````XX``!E0```#E```
+M&E````/@```B4```!`0``!E0```$"@``!D````00```&0```!!8```9````$
+M(@``!D````0P```&0```!#@```9````$/@``)U````1$```A4```!$H``!I0
+M```$4```*%````16```I4```!&8``!I0```$:@``(U````1P```A4```!'0`
+M`")0```$E```!D````2:```$0```!*8``"U0```$K```!$````3,```&0```
+M!-@```9````$X```!D````3N```&0```!/@```9````%````(E````4:```A
+M4```!2P```1````%,```!D````5.```Q4```!5X``#10```%9```,5````5T
+M```V4```!;```!I0```%R```"$````74```&0```!>(```9````%[```!D``
+M``7Z```:4```!B0```1````&.```!D````8^```:4```!D0```A````&8```
+M"$````9L```$0```!GP```A````&B@``!D````:8```&0```!J8```9````&
+MN@``!D````;````&0```!M```!I0```&U@``"$````;T```&0```!P````1`
+M```'$```"$````<6```&0```!R0```A````'*@``"$````<P```$0```!UH`
+M`$90```'<@``"$````>V```(0```!\(```A````(!@``!$````@:```$0```
+M""H```A````(,```"$````@^```&0```"%(```A````(8@``!D````AL```$
+M0```"'X```9````(K@``!D````C*```:4```"-````A````(V@``"$````D2
+M```&0```"1X```9````))```"$````DL```$0```"3(```9````).```!D``
+M``E(```(0```"58```9````);```!D````F````&0```"9X```9````)M@``
+M!D````G.```&0```"?````9````*$@``!D````H:```&0```"B0```1````*
+M2```"$````I.```&0```"E8```A````*8```"$````IN```(0```"G8```A`
+M```*>@``"$````J````&0```"I@```9````!Q```'5````+0```=4```!&``
+M`"I0```$H```+%````3$```O4```!3X``#!0```%6```,U````5N```S4```
+M!A```$!0```&+@``05````98``!`4```!G8``$%0```&D```0U````;L``!`
+M4```!PH``$%0```(#```25````@@``!*4```"#@``$%0```(I```05````C$
+M``!+4```"BX``$%0```*:```35````J0``!-4````<X```9````!T@``!$``
+M``'P```$0````?@```1````"$```!$````(8```$0`````0$````````````
+M`!,$`````````````"4$```````!^@```"P%````````!````#$!````````
+M`````#T!`````````````$H!`````````````%<!`````````````&,$````
+M```!2@```&\'```````*H````'@'```````*I````'X'```````,7@```(L'
+M```````,8@```*$'```````,9@```*@&```````,:@```+<'```````,;@``
+M`,`'```````,<@```,P'```````,=@```-,&```````,>@```-\$````````
+M)@```.P&```````,B@```/D&```````,J````0($````````?@```0P!````
+M````!````1@!````````!````20!````````!````3`!````````!````3D!
+M`````````````4D!`````````````58!`````````````6@$```````$?```
+M`74$```````%8@```9$(```````,U````9D!````````!````:(!````````
+M!````:X!````````!````;L!`````````````<\$```````%3````>@%````
+M```#^@```?H!````````!````@`!````````!````@H!````````!````A,!
+M`````````````B`%```````'\@```BL!`````````````C,!````````````
+M`CL%```````%G@```D<!`````````````E`!`````````````E8!````````
+M`````E\$```````%7````FH!`````````````GP!`````````````H@$````
+M```%<@```I,!`````````````J(%```````%>````JD%```````(_@```K$&
+M```````,O````KP&```````,P````L$&```````,Q````LH&```````,R```
+M`M,&```````,S````MT&```````,T````ND(```````,]````O,!````````
+M`````OH!`````````````P$(```````,Y````P@!`````````````Q,(````
+M```,[````QD(```````,Z````Q\!`````````````RD(```````,\````S(%
+M```````*/````SX!`````````````T4!`````````````TT!````````````
+M`U0(```````,W````V,!`````````````VL(```````,X````W)G8V,R7V-O
+M;7!I;&5D+@!?7U]G;G5?8V]M<&EL961?8P!?14Y44ED`97AE8P!?7U]M86-H
+M='EP90!?7U]T97AT7W-I>F4`7U]?9&%T85]S:7IE`%]?7V)S<U]S:7IE`%]E
+M>&5C7V5N=')Y`%]H7V5R<FYO`%]?<F5S`%]?<F5S7W-O8VME=`!?:7A?9&5F
+M875L=%]W8E]W:6YD;W<`7V5R<FYO`%]D=6UM>5]E;G9I<F]N`%]E;G9I<F]N
+M`%]?7W!R;V=N86UE`%]I>%]O<P!?9V)?5'-T5&%G<P!?<&]S7W)E<75E<W0`
+M7W!O<U]P86YI8RXV`%]P86YI8RXW`%]I>%]P86YI8P!?:7AE;75L8F%S90!?
+M:7AR96%L8F%S90!?9V)?17AE8TQI8@!?4WES0F%S90!?7U]S=&M?87)G8GET
+M97,`7U]?<W1K7VQI;6ET`%]?7VEN:71?<W1K7VQI;6ET`%]S=&%R=%]S=&1I
+M;P!?97AT96YD7W-T86-K7VEX7V5X96-?96YT<GD`7V)U9BXQ,@!?1$]30F%S
+M90!?9V)?1&]S0F%S90!?9V)?17AE8T)A<V4`7VEX7V5X<&%N9%]C;61?;&EN
+M90!?97AT96YD7W-T86-K7VEX7W-T87)T=7``7VEX7V=E=%]V87)I86)L97,`
+M7U]?<T8`7W-Y<U]N97)R`%]?8W1Y<&5?`%]I>%]G971?=F%R<P!?7VUC;&5A
+M;G5P`%]A=&5X:70`7U]E=&5X=`!?;6]N<W1A<G1U<`!?<W1R<F-H<@!?;6%I
+M;@!?7U]S=&%C:P!N;U]S=&ME>'0Q`%]?7W-T:V5X=%]S=&%R='5P`%]I>%]S
+M=&%R='5P`&YO7W-T:V5X=#(`7VEX7V5X96-?96YT<GD`;6-O=6YT`%]M8V]U
+M;G0`7W!R;V9I;&EN9P!?=&]S`%]T;VQI;6ET`%]S7VQO=W!C`%]S7VAI9VAP
+M8P!?<U]T97AT<VEZ90!?;65M7W!O;VP`7V)Z97)O`%]W<FET90!?9G)O;7,`
+M7U]?=61I=G-I,P!?<V)U9@!?<W-I>@!?7U]D:79S:3,`7W-?<V-A;&4`7VUO
+M;F-O;G1R;VP`7V-R96%T`%]P97)R;W(`7V-L;W-E`%]S=&]R95]L87-T7W!C
+0`%]P<F]F:6P`7V1U;6UY`%]P
+`
+end

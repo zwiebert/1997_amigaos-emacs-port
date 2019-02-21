@@ -1,0 +1,1526 @@
+[Todo and history list for ixemul port of Emacs 19.28, 19.29, 19.34b, 20.2, 20.3]
+
+(Sorry, my English is terrible but I work on it.)
+
+* TODO-BUG-REPORT:
+
+** 20.2.97: variable server-program refers to build directory but not
+EXEC_PATH.  Why?
+From lisp/server.el:
+(defcustom server-program (expand-file-name "emacsserver" exec-directory)
+  "*The program to use as the edit server."
+  :group 'server
+  :type 'string)
+
+** 20.2/20.2.97: x_make_frame_visible busy loop for already visible frames.
+
+** 20.2.97: emacs.c: New order -batch<=>-nl may break HAVE_SHM
+targets. -bw/22-Jul-98
+
+** (setq find-file-visit-truename t) breaks TAGS file.  The TAGS file
+is shown in the buffer list under it's true name but the tags-code
+(M-.)  seems to see another name.  TODO-bw/13-Jun-98: Test this out
+(this may happen only for my F keys lookup into include: and
+usr:include -bw/03-Aug-98)
+
+** src/xdisp.c::display_menu_bar() -bw/08-May-98 (???)
+
+** Makefile.in::install-strip does not install, only build
+
+
+* TODO-RTFM:
+
+** expand-file-name does not work for hm--html package, because it
+feeds it with double tilde (like "path~~/path").  Is this broken by my
+patches?
+
+** how malloc() relocating works?  Should we implement that? -bw/23-May-98
+
+** ((how about waiting for DOS operations (doubling file contents...)))
+*** the doubling happens if gcc (cpp?) runs on a file while saving it from
+Emacs. ...the same happens for sh programs while running.
+
+** see Info "(gcc)Return Address" for replacing access to SP/FP in
+amiga_smalloc.c with more cleaner code which may works also on
+different processors.
+
+
+* TODO:
+
+** todo-bw/09-Apr-99: Intui: scrolling using keyboard repeat does not
+update display, except for scrollbar.  Is this a bug or a feature?
+
+** Intui in amiga_sysdep.c: How to implement opening ASL font
+requesters on the public screen of your choice? -bw/04-Apr-99
+
+** Customize group amiga should be a member of environment group like
+MSDOS group. -bw/24-Mar-99
+** Translate argv[0] to UNIX syntax.  If the binary is in root then
+the colon appears in frame titles as site-prefix. -bw/04-Aug-98
+
+** Can we have automatic stack-extension for functions called from
+ixemul-signal handlers? -bw/02-Aug-98
+
+** Intui-Menu: show block only works if menu item was selected by
+holding button down and release.  It does not work for "clicks".
+Strange... -bw/01-Aug-98
+
+** Make sure we have no pending non IDCMP requests (expose events)
+when doing ASL requests.
+
+** Intui: fix experimental ASL refresh code.
+
+** Intui: Awinp_handle_refresh_window_event() uses sometimes the wrong
+background-color.
+
+** Emacs-20.2.92/97: update src/Makefile.in (el-compilation +
+emacs-link) from Emacs-20.2.92 -bw/22-Jul-98
+
+** Intui-ASL: Check syntax problem when choosing parent dir by
+asl-write-file. (Leading slashes!) -bw/26-Jun-98
+
+** Intui: C-down-mouse-2 [dc|...] and others causes mouse-yank-at-click.
+
+** Intui-Input: Handle AutoAdjust position changes in event loop.?
+
+** Intui-Refresh: Which is faster: Refreshing single rectangles or the
+whole region (DamageList->bounds)?
+
+** Intui-Menu: Handle submenus having keyboard-equivalent.  Currently
+the arrow is missing (Edit==>Text-Properties) -bw/14-Jun-98
+
+** Intui: Should a mapped existing frame (invisible/iconified) keep
+its own kind of refresh?  Should I provide a LISP command to change
+the kind of refresh for all existing frames on the current screen?
+Otherwise we have to find a place to do the init of
+amiga-simple-refresh flag.  ~/.emacs does not work, because the frame
+is already open then.  What about site-start.el or an ENV variable?
+
+** Intui: We may need to generate/fake an NEWSIZE event for windows
+auto-adjusted while opening.  Better we check the screen size before
+opening. ???-bw/13-Jun-98
+
+** Intui: Should we send expose events for main window in
+XClearArea(..., True)? -bw/12-Jun-98
+
+** Intui: Could/Should we replace the entire clipping by expose events
+from XClearArea()? -bw/12-Jun-98
+
+** Intui: How about increasing process prio while dragging the mouse?
+
+** Intui: What about ConnectionNumber() creating a pipe. Obsolete?
+
+** Intui: What about asynchronous win__flash()? -bw/11-Jun-98
+
+** Commandline --version argument: Check if it would suffice to
+allocate some storage for "pure" instead of doing an complete
+undump. -bw/08-Jun-98
+
+** '(kill-emacs)' via AREXX on console-Eamcs via AREXX leaves the shell in RAW
+mode.
+
+** -nl in non batch/terminal mode seems to cause trouble (trashs
+graphics memory).
+
+** Intui: Add GZZ code in mouse motion functions of xterm.c-20.2(.92)
+
+** Intui: Support color mapping for "rgb:N/N/N" syntax. ???-bw/02-Jun-98
+
+** Can/should I use LD_SWITCH_X_SITE to tell the compiler (in
+configure) about path to X shared libraies.
+
+** Outline: Hided entries cannot showed again.
+
+** consider using malloc (c-alloca) for regex.c (the stack growing may
+no longer so wasteful since Emacs-20.3)
+
+** found reaonable values for stealth options in customize group
+"lazy-lock".  Try to provide "load-average" function.
+ (Maybe do (setq-default lazy-lock-stealth-time nil) in
+lisp/amigaos-patch.el)
+
+** Intui: If gc-cons-threshold is very high, than the window table may
+becomes full with dangling scroll bars.  We need a call to
+Fgarbage_collect somewhere if window table becomes full.
+
+** Intui-Menu: wrong types/options for customizing should signaling an
+error.
+
+** Intui-Menu: keep open dialog boxes if users clicks outside.
+
+** Intui-Menu: renaming intui-specific custom variables.
+
+** Intui-Menu: By using an common MsgPort and counting
+activate/deactivate events we could fix some problems (but I don't
+mind about saving signal bits).
+*** partially-done-bw/04-Aug-98: we use a common MsgPort (the one of
+the root menu window) now
+
+** Find out current process-stack usage.
+
+** Intui: after redefer, we could reallocate colors for all
+mapped/open windows to get pens matching better to defined colors.  If
+we would do that twice we could also find out more unused colors:
+redefer(), realloc(), redefer(), realloc()
+
+** problem when running an uninstalled Emacs: when "doc-directory" is
+something like "/build/etc/", then LISP packages in subdirectories are
+not found. (etags.elc is searched in "/build/etc/../lisp/" but not in
+it's subdirs (./progmodes).  Note: another problem may be, that the
+lisp files are in the source directory but not in the build directory.
+
+** Are there any LISP forward objects pointing to global C objects
+handled by name in amiga_dump.c?
+
+**-----Emacs-20.2.92 starts above this line-----
+
+** Intui: Make an external menu bar like in Xt (real submenus!).
+(Note: real submenu works now without external menu bar.  The problem
+is, that opening intuition windows can be slow sometimes (many windows
+and many colors on AGA-graphics).  This may be the reason why it was
+disabled for X. -bw/12-May-98)
+
+** Xt/Intui: Different Meta keys (RAmiga+LAmiga and LAlt).
+
+** Intui:  Should I implement body of win__flush_subwin?
+
+** We could pretend a monochrome display when running with Intuition
+on pre V39 machines. -bw/05-Apr-98
+
+** Intui: Redefer unused colors by examining pixels in bitmaps of all open
+frames. -bw/25-Apr-98
+
+** Info-mode processes big menues much faster without menu-bar
+(Info-menu-update is very slow) (Brute forc: (defun Info-menu-update
+() nil).  Why is that not configurable?)
+
+** Intui: Because we close a menu when its becomes inactive, we lose
+if the user has installed a Sun-mouse commodity.  We could check for
+clicks outside the window (does that produce an event for left mouse
+button? *No.*).  What about using an invisible requester?  Multi-CX disables
+Sun-mouse for windows with active gadgets (string, lists).
+
+** Emacs disturbs Miami-IP/TCP running on internal serial port.  Xoper
+shows 11 I/O-Interrupts per second when no Emacs process is started
+but 22 when one ore more Emacs process is loaded (no matter whether
+running on Console or Intui).  That does not happen for other Ixemul
+clients (I've tested: less, lynx and gdb).
+
+** We could re-defer pens when doing redraw frame (but make sure that
+there are no other visible frames on that screen!)
+
+** central LISP function to get configuration parameters: 
+ (when (amiga-config 'mule) ...some mule code...).  But that needs a
+test with BOUNDP in portable code sections.
+
+** Should I set european display by default? (like in MBSK startuup)
+
+** Intui: Should SetNormalHints() change the WD_XXX fields?
+
+** Intui: Do automatically close DISPLAY after destroying all frames
+on it.
+
+** Intui refresh bug: Try to make the ediff control frame big (type
+"C-l ?"). -bw/19-Apr-98
+
+** Intui bug: overdrawing window border of small ediff control
+window. -bw/19-Apr-98
+
+** Block ^C/SIGINT in critical code?  Already done by Ixemul?!
+
+** Is it always a problem to call LISP functions from signal handlers?
+
+** Screen isn't unlocked when all its frames are deleted.
+
+** Bug: mouse dragging does not work while frame on different displays
+are opened (even when iconified). -bw/10-Apr-98
+
+** replace win_default_visual.
+
+** Intui: The menu input blocking disables the possibility of select a
+menu from menu bar while staying in another menus of
+stay-open-without-holding-the-button type. (Misfeature?!)
+
+** Should we assume "event.xcrossing.focus == false" when opening pop-up menus?
+
+** Why mouse-buttons do not work outside of frame area?  It seems we
+can reenable the filtering of such events.  Currently we filter only
+events of LBUTTON click on frame border.
+
+** Examine: Some IDCMP events (mostly left mouse button on scroll-bar)
+aren't processed immediatly.  Maybe the interrupt_input_pending flag
+is cleared after leaving the input loop.  Maybe the input-pending flag
+is ignored (I believe that the original SIGIO handler calls
+XTread_socket() directly). -bw/06-Apr-98
+
+** Do we look for any frame-geometry when opening a frame on
+Intuition?  (If not, that may be the reason for opening a ediff
+control frame with frong size.  But I don't believe that.)
+-bw/06-Apr-98
+
+** When using "Display" attribute (Intui): Use a config variable which
+defines properties of a named Intuition screen.  When open a new frame
+then we try to lock an existing screen with the given name first.  If
+such a screen doesn't exist we look into our config variable.  For
+unknown names we open a screenmode requester or clone the workbench
+screen or simply fail.  That should also depend on a config variable.
+*** (partially_done-bw/10-Apr-98: We do lock named public screens)
+
+** On Windows-NT/9X obscured frames will not updated (see comments in
+frame.h::struct frame)
+
+** ##! Bug: Char under cursor was invisible on default-face
+(Mule?).-bw/05-Apr-98
+
+** Store pointer to dynamically allocated color table in screens
+wd-info structure.
+
+** Setting the default font to (unusable) courier-5 leads to invalid
+arguments for XFillRectangle() called by x_scroll_bar_set_handle()
+
+** Maybe I could use Request(intuition) for blocking menuwindows or
+even the mainwindow. -bw/03-Apr-98
+
+** Which is the best priority for soft-interrupts?
+
+** If we forward a global-static (modul local) bool object, we must
+allow hunk_pointer for the entire DATA/BSS segments, but not only from
+FIRST to LAST, because of placement of static globals before all named
+globals by linker.  This would be no problem.  Only the debug have to
+be changed. (Currently the keyword "static" is disabled) -bw/02-Apr-98
+
+** Try to fix italic fonts.
+
+** clip away the Region in the GC, if any.
+
+** Why not encode a pid into a cons? (OK we have 28bit, no really need
+to change such unused code.)
+
+** Try a different default data file for map_in_data() when in
+"-batch" mode (NAME_DATA "-batch") -bw/15-Mar-98
+
+** killing Emacs by SIGINT/^C is impossible in TTY-Emacs.
+
+** w3 needs rgb.txt file
+
+** hcsroll-global-mode disables h-scrolling on mini-buffer (very painful)
+
+** Low prio-subprocesses now causes priority-"deadlock" on exit.
+
+** Workbench startup for lib-src/emacsclient to allow using it as
+default tool for projects?
+
+** Add AREXX port name to frame title
+
+** Is is possible to provide a different dump-load-path.  This would
+be needed by binary distributions.
+
+** amiga_window_menu.c: After unwind, test whether window is active.  If
+not, then continue unwind.
+
+** cannot use the env-variable EMACS_SITE_INIT, because getenv()
+doesn't work for unitialized Emacs.(?)
+
+** Should Asma_member_p() fail if it finds the addres in a free SSP?
+(Note: Asma_locate_address() does that since now) -bw/21-Jan-98
+
+** Make LISP variable which contains the dump file name to use it in
+../lisp/loadup.el.  (Rethink all about dump file).
+** Should I append version to EMACS_DATA_FILE?
+** Add Amiga specific commandline option `--data-file=FILE'!
+** alternative: Use version suffix (-20.2.1) like for ../etc/DOC to
+allow multiple dump files.
+
+** ../Makefile.in: add dependency for amiga_window_menu.o and
+amiga_firstfile.o (needed by reconfiguring!).
+
+** Bug: sub window clipping ignores the main window size.
+
+** trimming .saveds--... is already done by FFS, I think. If that so,
+then remove that patch from lisp/amigaos-patch.el.
+
+** implement pixmap (null pixmap)
+
+( Where do I this?: * Should unmapped sub windows really cleared by
+X-API?  Maybe this is the whole reason for the scroll bar resize
+problem.)
+
+** clearing growed scroll bars leaves one pixel of bottom border
+behind. (set_handle() clears only VERTICAL_SCROLL_BAR_INSIDE_WIDTH.
+(The problem is caused by the gap between handle and left scroll bar
+border).
+
+** Use 15pt or 13pt font in fontset.
+
+** Defer subwin event signal via XFlush() to avoid problems with
+resizing of two colliding scrollbars?
+
+** Try linewise pixel shifting instead masking for ghosted menu items
+
+** "region face" on monochrome displays is invisible
+
+** document the new configure options
+
+** Outline mode: In 20.2 its unusable slow (etc/NEWS hiding) and in
+19.34 it crashes the machine when starting w/o "-q" option (Even with
+stack size of 1.5 MB).
+
+** endless loop in intervals.c:update_interval() (triggerred by
+query-replace in font-locked xterm.c  (AMIGA_I_WINDOWS=>AMIGA_SCROLL_GADGET))
+ (also triggered by editing in amiga_window_defs.h/..._input.c)
+ (debugged: Wrong positon/total_length causes ping-pong traversing.)
+
+** check_cand() has failed for coding.c.  Why?
+
+** Mark line by triple-mouse-1 sometimes fails (since 20.2 or later patches)
+
+** Support MULE.  We need to improve font-list/query functions.
+Alternatively the user could provide a list with explicit fontnames.
+Personally I haven't any non ISO-2...9 charset on my
+machine. -bw/16-Dec-97
+
+** amiga_dump.c: Since I allow pointer beyound xxx_LAST we should check
+that condition for LISP pointers explicit (LISP pointer can only point
+to xxx_FIRST ... xxx_LAST!) -bw/16-Dec-97
+
+** use busy mouse-pointer.
+
+** add a clip region to <struct gc>.
+
+** making diffs: use ignore-whitespace option.
+
+** check sigsetmask() in process.c (see kill-compile problem).
+
+** do test the new file locking implementation for all cases (ram:,
+long filenames, ...) -bw/15-Dec-97
+
+*-----emacs-20.2 starts above this line -----------
+
+** ange-ftp seems to need pty(4) (ixemul needs mounted fifo-handler for
+this).
+
+** C mode indenting is very slow since switching 19.29=>19.34.
+
+** Send message from Gnus crashes the machine (tested with Miami-2.1p
+and ixemul/ixnet-020-47.2) -bw/11-Dec-97
+
+** Add switch to disable system keymap Alt-key cobinations.  TeX mode
+(?) provide its own Alt-keybindings (also ISO-chars).
+
+** native function key table (like for NT_GUI)
+
+** Fontifying in sh-mode fails if font-lock was not loaded at first.
+
+** The ^G kludge which sets a flag from a softinterrupt sometimes
+fails.  (test it in `hanoi')
+
+** Iconifiy/Deiconify ediff window has lead to failed precondition.
+Test this again.
+
+** defalias on builtin functions confuses check_cand diagnose. However,
+as long the C code never access the subr-struct its only a cosmetic
+problem.
+
+[I've lost all entries of this file since I started with 19.34.  I
+simply forgot to change my bookmark file. -bw/10-Dec-97]
+
+** (I should mention the --with-pop Option in the doc.  What about the
+setuid option for "lib-src/movemail".  It's required on Amiga-OS with
+installed Multi-User?) # It seems that we need no password for the
+popserver because movemail runs with superuser status.  This does not
+work for remote POP-servers.  If that so, then forget about
+--with-pop.
+
+** Emacs tries accessing the file/dirs '$HOME' and '/lib_src'.
+
+** It seems not ok to call OpenDiskFont() for a ROM-only font like
+Topaz-8.  The effect seems a bad resized Topaz-7/11 diskfont.  But if
+that so, why it works very good in amiga-set-font for for console.
+???-bw/25-Nov-97
+
+** Remove the need to call XFlush() for committing size changes.
+
+** amiga_window_menu.c: Protect resources.
+
+** xmenu.c: Implement real dialog-box.
+
+** If we would always redraw the both glyphs before and behind the
+cursor, a part of the italic problem would be solved.
+** italic chars are not cleared by writing a nonitalic space! (do
+list-faces-display and switch to an empty buffer to see the problem)
+(This seems to be a problem of Text(graphics) in JAM2 mode.  At least
+for a filled box cursor -bw/06-Jan-98)
+
+** To speed up clearing sroller gadgets, we could inverse the clip
+region in win__flush_iwin() and clear the "entire" inner-window.
+
+** "bold" and "bold-italic" faces are invisible after set-default-font.
+There is even some garbage from alien buffer.  After
+set-background-color they becomes visible again.  Its also always
+visible on cursor position.  I think the
+
+** The font XCourier-15 seems to provide an invalid XSize, which
+confuses the formatting.
+
+** Use env:font.prefs for "fixed" font (But what about the size parameter?). 
+ 
+** The font LetterGothic-bold isn't bold (SetSoftStyle() problem?)
+
+** Use modifier-masks of x_display_info in win__proc_idcmp()!
+
+** Locking the pubscreen sometimes fail. (DirOpus-4 seems to ignore
+the lock, and close the screen if we are inivisible (iconified)).
+
+** Screen changing would be easy to implement. Currently we lock the
+one public screen we found at program start.
+
+** x-parse-geometry, XParseGeometry: implement it
+
+** win__proc_idcmp: misleading name.  ReplyMsg() should done before
+do call any function that not always return.
+
+** XSetIconName(): Implement it right.
+
+** Iconify: If we could not open an icon and workbench is not running
+then don't fail.  Take SIGBREAK_F as deiconify event for the last
+iconified frame. (Or better not?)
+
+** Numeric keypad uses currently "kp-down", "kp-up", ... events instead
+of "kp-2", "kp-8",... .  There are two different lookup tables for
+raw-key events at C level. It may be a misfeature.  The alternating
+names on the keypad may differ on various keyboards.  I think it is
+safer/better to use "kp-n" and use key-tranlation-map at LISP level.
+
+** Change default input mode for TTY.  Test it also with AUX!
+  Interrupt input in TTY mode now is required for the new
+Intuition-also version.  The previous version only worked with CBREAK
+mode.  Maybe the code interprets the flag as the opposite as
+requested.  As workaound the mode is set in "lisp/term/amiga.el".
+
+** Italic fonts may trash the window border. Make a small internal
+border. (use x_display->internal_border)
+
+** x_destroy_window - implement it (or better paste from xterm.c).
+
+** IDCMP_CLOSEWINDOW: Should it really send delete_window_event (Would
+not save buffers befor kill)? -bw/26-Oct-97
+
+** PIXEL <=> CHAR must know about BorderTop/BorderLeft
+
+** Disable generating SIGIO for connection channel.  Maybe we even have
+no need for SIGMSG handler.  (If Emacs uses always our select() but
+not a blocking read, because it would not interrupted by SIGMSG as it
+seems (???-bw/25-Oct-97))
+
+** x_decode_color: WHITE_PIX_DEFAULT, BLACK_PIX_DEFAULT. If that really
+means the colors black and white then don't use it.
+
+** `help-char' may able to avoid the current C-h translation for TTYs.
+
+** The Intuition Emacs doesn't recognize terminated subprozesses
+(compilation) when run under "-nw" (con:) with current-input-mode ==
+'(nil nil t 7) -bw/24-Oct-97
+
+** need specified invariants for amiga_window_... handle. (example: 
+#define WD_INVARIANT(wd) \
+ ((!(GC_WIN_P(wd) || GC_NWIN_P(wd))) || GC_USED_P(WD_GC(wd) == true))
+
+** allow string as PID argument everywhere (needed only for machines
+with memory >26bit) -bw/22-Oct-97
+
+** kill-compilation (SIGINT subprocesses) does not work very well since
+19.29.... (do ixtrace on kill(2) for `kill-compilation')
+
+** Using __attribute__ ((stackext)) seems to break ixemul signals
+(SIGWINCH, terminated subprocesses are not notified). Only(?) SIGNINT
+works.
+
+** expanding assigns in minibuffer (expand-file-name,...) is
+sometimes(?) bad.  (Setting a bookmark path with assign should keep
+the assign name in the bookmarkfile.) -bw/04-Oct-97
+
+** amiga_smalloc.c: Make 0 size allocations more efficient.
+
+** (Bug in hideif: show-ifdefs (?) turns ^J to ^M in hiding areas.)
+
+** (Bug in vc: Type error if visiting CVS files with "find-file-read-only". -bw/30-Sep-97)
+
+** Missing file: emacs-19.29/mkinstalldir (in diff?) -bw/30-Sep-97
+** Missign make rule: "lib-src/make-path" -bw/30-Sep-97
+
+** emacs-19.29/lisp/loaddefs.el: Braindead keytranslations: f1=>HELP,
+help=>^H without system test. -bw/13-Sep-97
+
+** Use the baseline mechanism for finding dumpfile "in-place"
+(../etc/EMACS-DATA).
+
+** alloc.c: Increase value of INTERVAL_BLOCK_SIZE?.
+
+** loadup.el: "stringp,0" type error if called without "dump" argument.
+
+** confusion: MAXLG in amiga_smalloc.c is used as MAXLG-1.
+
+** Examine: What about dumping handlerlist, catchlist, backtrace_list?
+Maybe we should print an errormessage and abort instead overwriting it
+with (void*)-1 in map_in_data
+
+** Bug: Log Output in amiga_smalloc.c uses stdio but is called from signal
+handlers. (?)
+
+** Add independent storage tracking table to amiga_smalloc.c? (It would
+be cheap).
+
+** Use ix_get_xxx_segment() instead linker symbols? (better not)
+
+** Avoid signatures like f(startp, endp), becaus its hard to call from
+gdb(1).  The usual  f(startp, len) is better.
+
+** Check the usefulness/pitfalls of the emacs-priority feature.
+  (problems so far: 3. (batch (workaround), common process with
+Amiga-CLI (workaround), byte-compile (its not nice to use always
+nice(1))))
+
+** Bug: Completion of non existent volumes (Amiga path) is broken.
+ The volume is stripped.
+
+** Long ouput lines in Minibuffer confuse the terminal.
+  (Try `(cancel-debug-on-entry 'dired-internal-noselect 1)')
+
+** Is DOC really architecture independent? 
+
+** Remove all `#if defined' from outside [__amigaos] because of the
+limited VMS cpp (I've already removed all ANSI #elif's).
+
+** Make the amiga_smalloc.c clenup more reliable.
+
+** Avoid redirect of stderr for terminal files if it already redirected
+(stderr!=stdout)
+
+** Bug: kill(- -gid) calls sig handler on partly shut down emacs. Add
+flag or remove set default handlers before doing cleanup.
+
+** Don't use stdio in error reporting functions called from signal
+handlers (my_xpntr() and such).
+
+** Examine: Is the current behaviour of mixing stdin and stdout in
+"*Shell Command Output*" correct?
+
+** Check whether we could/should change "#" char for autosave files (in
+lisp/files.el). (btw: No need for change "~" for backup files, because
+VIM and indent used it also without causing problems.)  Examine: What
+happens with # if one enables Amiga search patterns with ixprefs?  (I
+don't like the OS-casing in files.el in previous version.  We should
+simply write our own lisp function like in vms-patch.el.  Or stay with
+'#')
+
+** In forms mode. UNDO causes readonly text properties go away.  Another
+bug in Intervals/Text-Properties?
+
+** Make sure we don't violate the rule: DATA segment contains only pure
+data. (mem_seg_bits does it). ...and no static data inside functions!
+
+** Try to support numeric keypad on TTY! (How?)
+
+
+* BRAINSTORM
+
+** We could provide site-specific DATA_SEG_BITS at configure time. -bw/14-Jan-98
+
+** -bw/12-Jan-98 If we really have RAM partly above 28bit, than we
+lose if low and high part of RAM aren't not on the same 28bit-page.
+It would be more compatible to use 'add' rather than 'bit-or' for
+XPNTR().  We could use the text-segment start address as base value
+and store the offset in LISP pointers:
+ #define XPNTR(obj) ((void *)((unsigned long)DATA_SEG_BITS + (unsigned long)XFASTINT(obj)))
+ #define XSET(type, ptr)
+
+** Speed: Avoid multi-segmentation: We could use a single page with
+overflow (0x0e000000...0xffffffff,0x00000000...0x00xxxxxx).
+
+** What about "cooperative" multitasking.  We could call nice() if we
+are leaving the keyboard input function.  Sounds easy.  This would
+eliminate the priority dilemma.
+
+** How useful would it be to have different dump files (No problems
+without shared data and no problem to add a commandline arg but we
+would need different DOC files too)
+*** comment-bw/13-Jun-98: DOC is a common file.
+
+
+* WORKAROUND:
+
+** TAB in minibuffer completion for directories doens not work always.
+** opendir(2) called by file name completion does not work reliable.
+ (workaround: The SIGMSG handler is disabled now.  Now we use
+ix_select(ixemul) only))
+
+** Invisible output in subshell when invoked with "-t" option.
+ When running with "-t" we don't see any output of Amiga commands
+(like C:List) in the Emacs subshell.  It works with ixemul commands
+and also for all commands in both the inferior shell or for
+shell-command.
+ (workaround: New function Asys_separate_input() to make different
+files for Input(dos) and Output(dos). It has something to do with
+I/O-buffering.  (Thanks to Jörg Höhle for explaining the matter to
+me))
+
+** Bug: killing inferior shell buffer turns sh into a zombie (you
+cannot kill it with ^C. It stays in the process list (list-processes)
+as killed) 
+  (workaround: EMACS_KILL_PG() redifined. You can switch the
+workaround on by setting amiga-working-killpg to nil)
+
+** ^C SIGINT breaks C-c prefix key. SIG_IGN makes at least
+emacsclient/-server deaf.
+ (workaround: key translate C-z => C-h)
+
+*MAYBE DONE:
+
+** do we really need staticpro re_match_object (amiga_sysdep.c)
+** todo-bw/05-Aug-98: 20.3-pretests: I should debug the "Stack
+overflow in regexp matcher" message produced by fontlock.  That seems
+to be an serious problem. (Trace: search.c:matcher_overflow; ...;
+regex.c:re_match_2_internal returns -2)
+*** done-bw/08-Mar-99: I removed staticpro of re_match_object
+introduced on 27-Jan-98.  This could be the reason for the problem,
+but I cannot try fontlock on UAE to test it, because it would be too
+slow on my i486DX4-100.  However, there was such error message on
+Emacs startup sometimes with UAE which never came back after removing
+the staticpro (and setting this variable to Qnil in
+amiga_dump.c::map_in_data())
+
+** Intui: When sending a big serie of Iconify-Toggle-AREXX messages
+(fast repeating of Toolmanager hotkey) the process hangs in iconified
+state waiting for exec signal 0x10.  (No matter which refreshing type
+we use).  Is this problem caused by message handling or by accessing
+(?) closing windows.
+*** done-bw/19-Jun-98: block signals in REXX list traverse functions.
+
+** Bug: In amiga-arexx-process, condition-case does not work for
+QUIT(?). (Example: Send '(hanoi)' via ARexx and click into the hanoi
+buffer. Now the variable amiga-arexx-processing contains 't.
+ (done-bw/12-Mar-98: added quit-handler in 'amiga-arexx-process)
+
+** Bug: scroll bar clicks not always recognized by
+amiga_window_input.c::win__proc_idcmp().
+
+** interval.c: There are 2 bad casts (Lisp_Object) from pointer.  The
+result is tested witch XTYPE (shudder).
+** forms-mode (forms-use-text-properties): If true the update does not
+work. Have we text properties?  Forms.el test wether
+set-text-properties is bound (it is).  (USE_TEXT_PROPERTIES is
+defined.)  (if done remove the workaround from *.forms)
+*** (done-bw/24-Jun-97: hacked NULL_INTERVAL_P. works not 100% on Amigas
+with mem on addresses >26bit!)
+
+
+* RTFM-DONE:
+
+** How works 'amiga-map in Emacs-18.59? -bw/10-Mar-98
+
+** Examine: w16select.c -bw/10-Mar-98
+
+** Setting bg-color via pop-up menu doesnt
+work. (facemenu-set-face-from-menu)
+** facemenu bg/fg does not work.
+*** (done: must disable font-lock-mode + sets the face-color not the frame color)
+
+** Expand assigns for UNIX paths in finding fiile by `next-error'!
+*** (done: set find-file-existing-other-name)
+
+** The backspace key in isearch drives me mad. It affected not the
+pattern but stops search and works on buffer.
+*** (done: use keyboard-translate function)
+
+** Support umlauts! (I dunno how, but this was a FAQ in de.comp.gnu.).
+*** (done: Emacs-19 has ISO-8859-1 comes with support for both output and
+input. Input conflicts with META chars. I've bind symbols for german
+umlauts to key-tranlation-map (in file lisp/term/amiga.el).)
+
+
+* SMALL FIXES:
+
+*** fix-bw/09-Apr-99: limited width of assert requesters
+
+*** fix-bw/08-Apr-99: amiga_smalloc.c:Asma_sys_alloc(): no termination
+for unitialized Emacs if failure was caused by failed verify.
+
+*** fix-bw/08-Apr-99: amiga_malloc.c:Ama_verify_storage(): For single segment code, range was tested with 0<=X<=(DATA_SEG_BITS | ((1<<VALBITS)-1))
+
+*** fix-bw/18-Jun-98: Intui-Menu: Use BLOCK_INPUT in xmenu_show() and
+XTflash().  Do block SIGINT in xmenu_show().
+
+*** fix-bw/14-Jun-98: Intui-Menu had a memory leak. (destroy func-ptr
+was overwritten by bzero(obj...)).
+
+*** fix--bw/12-Jun-98: Intui-XConfigureWindow(): subwindow (scrollbar)
+resizing has cleared wrong size (1 point less than needed) at bottom.
+
+*** fix-bw/12-Jun-98: Intui: child detection in XTranslateCoordinates() has
+confused X and Y.  Also it hasn't used WD_CHILD_FOREACH() but scanned
+the whole wd-table.
+
+*** fix-bw/26-May-98: multiselect in ASL filerequests (in
+amiga_window.c::Awin__wbarg_to_lisp)
+
+** since 20.2.92: interrupt input mode in console causes WatchMem-Hit:
+*** fix-bw/16-May-98: win_subwin_mp_push: null pointer write access
+
+*** fix-bw/13-May-98: amiga_dump.c::check_cands()
+
+*** fix-bw/14-May-98: fileio.c::Fsubstitute_in_file_name() (broken for
+zero length strings)
+
+
+* DONE:
+
+** filename completion does not work for top level directories like
+/sys/.  It will only produce "./" and "../" (Which may be produced by
+a different function than the missing directories. (reported at
+-bw/01-Apr-99)
+*** done-bw/06-Apr-99 in src/dired.c.  Note: This error seems to
+happen only for 3rd party file systems (like PFS/AFS (or the Berkeley
+ffs when running in UAE))
+
+*** done-bw/08-Apr-99: different interval-allocating, which can use
+all memory except exactly matches to both STRINPG() and VECTORLIKEP()
+
+** Move Lisp types String+Vectorlike to higher values in lisp.h.  This
+will increase the range of memory usable for intervals.  Make sure
+that we are really allowed to do this.  -bw/11-Mar-99
+*** done-bw/22-Mar-99 (but it needs more testing (UAE is too slow for
+doing this at the moment))
+*** done-bw/11-Mar-99: Interval allocation (Asma_low_alloc()) changed.
+Now we allow memory addresses upto (void*)((Lisp_String |
+Lisp_Vectorlike) << VALBITS).  This is the minimum requirement of
+NULL_INTERVAL_P().
+
+** AREXX: When sending a AREXX message to an Emacs process, which is
+doing hanoi the event is not fully processed until the next AREXX
+messages has arrived.
+*** done-bw/09-Mar-99: New function Arxp_handle_quit() called from
+Fsignal().  This replies all incoming-list messages with
+rc=20,result="Quit".
+
+** (stringp,nil) on startup for Intuition Emacs because DISPLAY was
+not set. (reported Bug)
+*** done-bw/08-Mar-99: Set default for $DISPLAY in
+amiga_sysdep.c::Asys_early_init.  Without any $DISPLAY/-d it would be
+required to start with "-nw".  Because we have not implemented such
+behavior in dispnew.c (like it is for X) we must provide $DISPLAY to
+prevent type error (stringp,nil) on startup.
+
+*** done-bw/08-Mar-99 in s/amigaos.h: "-m68020" added to
+C_OPTIMIZE_SWITCH because egcs is not able to compile all files for
+68000.
+
+*** done-bw/07-Mar-99: --enable-nsegs=3 tested on UAE with 0x400000000
+Z3 RAM mixed with normal FastRAM.  (Of course, this was tested in the
+past for old 26bit Emacs too (PCMCIA RAM mixed with Blizzard-1230-I
+RAM))
+
+** BUGREPORT: 20.2.97: New XLoadQueryFont-code in x_list_fonts misses
+XFreeFont!?  -bw/22-Jul-98
+*** sent-bw/03-Aug-98
+**** done-bw/25-Aug-98: got no reply for this bug report, but RMS has
+fixed it on 04-Aug-98 according to src/ChangeLog
+
+*** done-bw/07-Aug-98: new defun custom-set-face for Emacs-19.34 in
+lisp/amigaos-patch.el
+
+** Bug: make install on 20.2.97: the hardlink /bin/emacs will not
+created. This may be the right behaviour for such alpha versions, but
+it may be a bug nonetheless.  -bw/03-Aug-98
+*** done-bw/04-Aug-98: This was because of missing link to amigaos
+directory wich has caused failing of install-arch-dep rule before the
+link was made.
+
+*** fix-bw/31-Jul-98: lisp/term/amiga-intui.el: menu-item disabling
+in Amiga menu has not worked in 19.34 because of undefined variable
+menu-updating-frame
+
+*** fix-bw/31-Jul-98 lisp/term/x-win.el-19.34: garbage removed
+
+** Intui: Hangs in Wait for exec mask 0x00000010 (Mostly (?) when
+iconified).  This is since I implement WFLG_SIMPLE_REFRESH
+windows. -bw/14-Jun-98 (#exp-bw/21-Jun-98#: qualify win_info_tbl[] as
+volatile)
+*** done-bw/??-Jun-98: reason was type error (using WD_LAYER() on
+icon).
+
+
+** Intui: We need an UnmapNotify event for invisible (not iconified)
+frames.
+** AREXX: calling error() may leave SIGINT blocked.
+*** done-bw/20-Jun-98
+
+*** done-bw/18-Jun-98: Call to menu-bar-enable-clipboard removed from
+lisp/term/x-win.el because it's slow.  It's also no reason to make it
+a default on Amiga-OS.
+**** No.  menu-bar-enable-clipboard does a different thing, but has
+still no use for AmigaOS.
+
+** refresh: should we use dumprectangle + simple refresh?
+*** (cancelled: That would be even slower)
+*** done-bw/14-Jun-98: Its not slower but faster, at least on plain
+AGA-gfx machines.  It's optional, because Gfx-board owner may prefer
+no-care-refresh frames.
+
+*** done-bw/12-Jun-98: Improved implementation of expose events.  Now
+all scroller resizing and destroying works OK.  The whole thing is
+done by produce expose events in XClearArea() and
+XConfigureWindow().
+
+** When making doc of lisp/amigaos-patch.el: ## expected a symbol, got
+'(' (This does not happen for any copy of that file.  Strange.)
+*** done-bw/11-Jun-98: It's seems required to use correct indenting
+for Lisp files, otherwise make_docfile cannot scan it.  Anyway, I've
+added file name and byte offset to lib_src/make_docfile.c for that
+error message.
+
+** Do asynchrounous deferred detaching of clip region in XTupdate_end?
+(Use timer device and soft interrupts?)  Or is there a simpler way?
+(A conditional or a better fitting  function than XTupdate_end()?)
+*** done-bw/11-Jun-98: Now I detach the regions in XTupdate_end() of
+incactive frames.  That has required an explicit detach in
+win_notify_menu_context().
+
+** Provide seperate diff files for baseline bugfixes.  There is
+already one: wrk:dev/emacs-bugs/19.34-fixes.diff. (Search for "bugfix"
+in the regular diffs).
+*** done
+
+*** new-bw/??-Jun-98: New function "amiga-load-color-file" to add user
+defined color names (Note: the color table is not accesible from Lisp,
+sorry).
+
+** Override DISPLAY environment variable for Intuition. (!)
+*** done-bw/98
+
+** AREXX: Invalid precondition for bar impure Emacs (-nl without -l loadup).
+*** done-bw/??-Jun-98
+
+** Intui: What about the comment on top of src/amiga_window_xapi.c
+about inner window sizes? -bw/02-Jun-98
+*** -bw/08-Jun-98: GZZ experimental code added (define XAPI_GZZ)
+
+** Could I use --eval commandline option to recompile
+lisp/term/x-win.el from src/Makefile?
+*** yes-bw/08-Jun-98:
+** Bug-19.34: x-win.elc not automatically deleted.
+*** done-bw/08-Jun-98: remake of lisp/term/(x-win.elc|amiga-intui.elc)
+in src/Makefile.in
+
+*** bugfix-bw/06-Jun-98: commandline parameter "--version" caused
+crash.  It uses lisp before undumping.
+
+*** done-bw/05-Jun-98: Speed up check_ignore() for dumping.  There are
+now 2 caches.
+
+*** done-bw/05-Jun-98: Speed up patch() for undumping more than 2
+times (`emacs --help' used ~10 secs on my machine, now only ~3 secs)
+**** change-bw/09-Jun-98: now we handle --help before undumping.
+
+** IntuiMenu: calc real height of menu box title
+*** done-bw
+
+** BUG: remove /PROGDIR/ from Makefile rules!
+*** done-bw/04-Jun-98
+
+** Menu ghosting method could depend on font size. -bw/05-Apr-98
+*** done-bw/98
+
+*** change-bw/02-Jun-98: Intui: Prefix-key for toggling numlock
+changed from Meta to Hyper (aka left Amiga key).
+
+
+** 19.34-Intui-Bug: Sometimes the Softint-Ports remain blocked. The
+User have to wait for next select-timeout.  (Maybe the blocking in
+gobble_input() is stupid after all)
+*** done-bw/02-Jun-98: The C-g checking in read_avail_input() may
+raise a signal, therefore it does not return to gobble_input() which
+contained a pair of MsgPort blocking functions.  I removed that pair
+now, because the SoftInt handler does nothing but set an Exec signal
+which does not change the control flow of the program like the blocked
+BSD signals would do.
+
+** Bug-19.34: When doing iconify: Wrong type argument: framep, #&...
+*** done-bw/01-Jun-98: I simply forgot apply diffs to keyboard.c.
+
+** Let -O2 be the default.
+*** done
+
+*** done-bw/21-May-98: Intui: num-lock switch (amiga--nk-numlock)
+implemented.
+
+** #!# searching regexp is much slower than searching strings:
+"abcdefg" is fast; "abcd.fg" is very slow. It would be much faster if
+we would at first search for "abcd" (the string before the very first
+joker).  I've noticed this in tags-search but it may explain why Info
+and Outline mode are so slow. -bw/20-May-98
+** what about an cache for compiled regexp?
+*** does already exist!
+*** its slow because of slow RE_TRANSLATE() macro, which is called for
+every char in a buffer and calls some slow functions
+*** fixed by RMS: New macro lisp.h::CHAR_TABLE_TRANSLATE().
+
+** "life" does not work: it needs an input event before it continues
+(signals?).  It works on X only, which is the only configuration does
+not pass a signal mask to ix_select.  It does not work for console
+(interrupt or cbreak) and on Intuition (interrupt).  (There were
+problems which sigmask using ix_select() for IO functions (opendir)).
+(The modeline clock doesn't work either) ##sit_for() does not work. An
+invalid timeout->tv_micro is passed to Awin_select: timeout->tv_micro
+= 4294050368 = 0xfff20240 ####problem caused by timeval struct
+included by AmigaOS header which uses _unsigned_ fields.
+*** done-bw/20-May-98: timeval code changed in "src/s/amigaos.h" to
+avoid using unsigned timeval fields.
+
+*** done:-bw/19-May-98: Intui: use Window.UserData to hold pointer to
+x_display_info and wd.  That makes mouse dragging as fast as it was
+before supporting multiple screens.
+
+** slow tags-search: 1. (set-auto-coding() called for every file)
+2. erase-buffer allocates big amounts of memory which causes many
+calls to Fgarbage_collect (nearly one per 10 files).
+*** (fixed by RMS: 1. fileio.c::insert_file_contents: looking for
+coding system and local variables before call set-auto-coding.
+2. insdel.c::insert_1_both: check for
+current_buffer->undo_list. -bw/18-May-98
+
+*** done-bw/16-May-98 ARexx support for -nw (TTY).
+
+** Edebug menu has invisible and enabled separators (at least in Intui)
+*** (done-bw/16-May-98: an empty string counts as separator too)
+
+** Ffile_name_directory was (?) broken for amiga paths!  (This should
+also be the reason for the reported enforcer hits).
+** Use function names in diffs to make updating easier -bw/07-May-98.
+*** (done:-bw/12-May-98)
+
+** amiga_window_menu.c: gfx-trash while scrolling when cycling; we
+need to detect item select in all visible parents, otherwise we could
+not leave a menu created by pane with only submenus.  (What about
+WhichLayer(layer) to find out the frontmost window on mouse
+position?); The separators in face menu are not "--" but
+"-------------------".  Why?
+*** (done-bw/11-May-98)
+
+***done-bw/09-May-98: Fix: endless loop in "menu_create_emacs" working
+on submenus.
+
+***done-bw/27-Apr-98: Added customize support for a few amiga specific
+options.  The group name is "amiga".
+
+***done-bw/27-Apr-98: Intui: XRaiseWindow() calls ScreenToFront().
+
+** Intui: Because using WA_AutoAdjust when opening a frame, send an
+resize event if needed. -bw/27-Apr-98
+***done-bw/27-Apr-98: Code added to IDCPM_ACTIVEWINDOW. (but it does
+not produce any event)
+
+***done-bw/26-Apr-98: Intui: x-parse-geometry implemented now.
+
+***done-bw/26-Apr-98: in src/Makefile.in: ixstack.stamp code was buggy
+and also not really necessary.
+
+** Bug-Report: Missing unload_color() in x_set_..._color(). -bw/05-Apr-98
+***done-bw/26-Apr-98
+
+** Used colors (e.g. modeline) are freed when using MULE (C-h h). (Really?)
+*** done-bw/22-Apr-98: Bug in XGetGCValues() which set xgcv.background
+to gc.foreground and let background uninitialized.
+
+*** done-bw/21-Apr-98: MBSK partially merged.
+
+*** done-bw/10-Apr-98: WD_IRIGHT(), WD_IBOTTOM() had wrong
+result. (+1)
+
+** Middle button on scrollbar is turned to vertical mode line event
+after returning from pop up menu.
+
+*** done-bw/09-Apr-98: Bug: The frame has always open on the default
+public screen.  (It was not OK to use Screen.Type of WD_PARENT() for
+NewWindow.Type.)
+
+*** done-bw/09-Apr-98: To avoid obtaining never used shared pens:
+Deferred pen obtaining.  Releasing pens when unmap frame.  This works,
+because ObtainBestPenA() cannot fail as long we have at least one
+shareable pen in screen colormap.
+
+*** done-bw/07-Apr-98: Bug: When unmap a Intui-frame, it has lost its
+parent WD.
+
+*** (done:-bw/05-Apr-98 Bugfix: colors are freed in x_set_..._color())
+*** (done:-bw/05-Apr-98 Bugfix: colors wasn't freed in unload_color(),
+because we had use a statically display class.
+
+** Remove the gap between scroll bar handle and left scroll bar
+border, or fill that gap with background color.
+*** (done-bw/04-Apr-98: gap filled with REVERSE_GC)
+
+** The very first IDCMP_MOUSEBUTTON of each button is lost.
+*** (done-bw/04-Apr-98: We have to use unsigned data types for time
+stamps.  win_mouse_pos_time was "signed int")
+
+** Bug: Deiconify with 'iconify-or-deiconify-frame (via ARexx) does
+not fully work.  It's not possible to iconify the frame again, except
+by iconfiy-event caused by mouse click on close gadget.
+*** (done-bw/03-Apr-98: map IDCMP_ACTIVEWINDOW to deiconify events if
+f->iconified)
+
+*** done-bw/17-Mar-98: ARexx: Use C types instead Lisp types in list
+manipulating functions.  This avoids alot of senseless code for type
+transformations.
+
+*** done-bw/17-Mar-98: Complete the new pubscreen locking.  I forgot
+it, therefore we could end up with 2 different screens causing major
+trouble (wrong pens, ...).
+
+** It seems that Gccfindhit does not work witth EGCS compiler.
+*** (done-bw/17-Mar-98: Gdb doesn't work either, because of wrong
+stabs produced by cc1.  Bug reported to cygnus + gg mailing list.  FNF
+says that it is rather a problem in gdb)
+
+*** done-bw/13-Mar-98: Bold text for menu titles on monochrome displays.
+
+*** done-bw/12-Mar-98: amiga-put-icon reimplemented
+
+*** done-bw/12-Mar-98:  Fixed PID related bug in sichld_handler()
+
+** Disable Terminfo/NCurses, because it seems to be buggy (no
+umlauts; let crash the machine).
+*** (done-bw/12-Mar-98: 0 conditional in src/s/amigaos.h)
+
+** XTFlash: flash window frame and restore it with Intuition.
+
+*** done-bw/06-Mar-98: Clipboard support implemented.  Code is taken
+from both "Emacs-19.28::amiga_clipboard.c" and "lisp/term/w32.el".
+
+*** done-bw/06-Mar-98: Close menu window if it becomes inactive
+
+** report display_menu_bar() bug to FSF.
+*** (done-bw/14-Jan-98: mailed)
+
+*** -bw/14-Jan-98 Tested and fixed: Configure and compile Tty-only version 
+
+** Examine: Is use of FRAME_WINDOW_WIDTH() in dumpglyphs() correct?
+*** (done-bw/14-Jan-98: yes)
+
+** Supress "Kontaktprellen" of mouse buttons.
+*** (done-bw/09-Jan-98: new function amiga_window_input.c::win_valid_button())
+
+** Examine!: Does closing forkin/forkout in process.c really hang for
+failed exec()s?
+*** (no-bw/08-Jan-98)
+
+** Bug (not on TTY): do "C-x 3", "C-x-o", "C-l" => missing chars in
+menu bar (+ scroll errors?). (partial traced:
+frame->..._glyphs->used[0] will set to 126 on an 84 column frame.)
+*** (done-bw/08-Jan-98: fixed in xdisp.c::display_menu_bar())
+
+*** ./Doc turned to Outline mode
+
+** Test/Implement AMGA_NMB_SEGS==1 in amiga_malloc.c
+*** (done-bw/08-Jan-98)
+
+** Subprocess pipes/pty's are not completly freed/closed.
+***(done-bw/08-Jan-98: code was commented out for __amigaos in process.c) 
+
+** Bug: emacsserver does not work any more: "Server error: select:
+Interrupted system call" (The problem (?) is not in the "emacsserver"
+executable, but in Emacs-20.2 (signals?)).  Visiting file by
+emacsclient does work, but "C-x #" doesn't.
+*** (done-bw/07-Jan-98: was caused by spell error in conditional
+compiling.  Fixed by using a dummy pipe for input_fd on Intuition.
+
+** The separate menu IDCMP breaks mouse-button up/down event balance 
+** Menu must reset last_mouse_wd[]
+ (done by sideffect of IDCMP_WINDOW_ACTIVE fix below)
+** IDCMP_WINDOW_ACTIVE must reset last_mosue_wd[]!
+*** (done:-bw/04-Jan-98)
+
+** configure: add AMIGA_(NO_)I_WINDOWS to config.h.  Use better option
+for A_SEGID_BITS. 
+*** (done:-bw/04-Jan-98 Now we have --with-intui/AMIGA_HAVE_INTUI and
+--enable-nsegs=N/AMAL_NMB_SEGS)
+
+** XCreateWindow() cannot handle WT_NWIN parents.
+*** (done:-bw/03-Jan-98)
+
+** Amiga paths seems to interfere with ange-ftp paths now. (ange-ftp
+calls substitute-file-name while it inhibits itself.  The __amigaos
+patch now remove the hostname from the path). -bw/12-Dec-97
+** process.c: We should define "DONT_REOPEN_PTY" in src/s/amigaos.h and
+remove the old conditionals in src/process.c, which done the same.
+** Define NBW if we configured with X.
+** De-iconfiy is broken.
+** Implement Amal_lpntr_p for AMAL_NO_SEGMENT!
+** pure option changed. document it!
+*** (done)
+
+** Bug: visbible bell (XTflash()) causes a byte write (0xa5) to machine address 0. 
+*** (done:-bw/20-Dec-97: in Awin_select(): missing test for readfds==NULL)
+
+** Examine:  What about RELPATHs in emacs.c. Remove ore use?
+*** (done: removed)
+
+** Is it ok to use the Seconds/Micros fields of an IntuiMessage?
+*** (yes: -bw/14-Dec-97)
+
+** I forgot to filter the dead keys. M-g is both a prefix key and a
+console dead key (at least for d-keymap).  M-g u turns out to M-g ù.
+Workaround: Use ESC-g until it's fixed. -bw/13-Dec-97
+*** (done:-bw/14-Dec-97: Was very easy. The union in struct InputEvent
+has confused me.)
+
+** amiga_window_menu.c: string_pane => submenu (useful especially for
+the font menu) Show menu strip title and keyboard short cut.
+*** (done:-bw/24-Nov-97)
+
+*** Bugfix in CHAR_TO_PIXEL_WIDTH: Wrong size calc for frames with
+vertical scroll bar.  -bw/23-Nov-97
+
+** Shall I use ReportMouse(intuition) for efficiency?  (Turning it on
+when mouse button is pressed, and turn it off after it is released).
+
+** emacscserver should popup an iconified frame.  (If the user have a
+backdrop workbench window and the invoker of emacsclient does not
+allow resizing of its window in busy state (like in IntuiNews) then
+its not possible to click the app icon.)
+*** (done: -bw/16-Nov-97 add-hook in lisp/amigaos-patch.el)
+
+** ... define HAVE_X_WINDOWS in src/keyboard.c
+*** (done: -bw/16-Nov-97)
+
+** weakening of X... and AIT-hooks preconditions to allow drawing on
+unmapped windows (it may fail, however).  (??? I don't like such
+tolerant code.  It makes programs buggy.)
+*** (done: -bw/15-Nov-97)
+
+** After deiconify the workbench window is active and the app window's
+frame is also blue (means active).
+
+** audible_bell()=>preferences bell (may visible as well);
+visible_bell()=>own code flashing the background color of the window.
+
+** Cursor covers the underlying character.
+*** (done: the problem is gone)
+
+** centralize clipping for more speed (try also "line dancing")
+*** (done: -bw/09-Nov-97)
+
+** size problems with make-frame-(in)visible
+** Should I make the screen a parent of WT_WIN/WT_NWIN?
+ (all done)
+
+** -bw/29-Oct-97 amiga_smalloc.c:Asma_low_alloc() now avoids
+MEMF_24BITDMA if possible.
+
+** Make a new Intuition terminal?
+
+** amiga_dump.c (check_cands): Make 2 functions: scan_for_patch,
+scan_for_nodump.
+
+** Failed assert when doing switch-to-buffer-other-frame in the TTY
+version of Emacs (14-Oct-87).
+(/src/emacs-19.29/src/amiga_malloc.c:517: failed assertion
+`Amal_addr_valid_p((void*)val)'). Maybe this is already fixed in the
+current developer version.  -bw/20-Oct-97
+*** (done:-bw/20-Oct-97 type error in frame.c)
+
+*** amigaos/findsym.pl - new scanner program for src/amiga_dump.cands
+
+** SIGWINCH does not work for reinit display after amiga-set-font, if
+the font (or the font-size?) has not changed
+*** (done: call also Fredraw_display())
+
+** Bug: help-apropos sometimes crash depending of the pattern ("hex" always crash)
+       (Not a process stack problem) -bw/03-Oct-97
+*** (done:-bw/03-Oct-97: fixed in amiga_smalloc.c: allocating 0 size broken.)
+
+** Bug: `expand-file-name' appends a slash for user directories ending
+with a colon.  { (expand-file-name "~sysadm") "/sys/" }
+*** (done:-bw/1-Oct-97: fixed in fileio.c::expand-file-name[__amigaos])
+
+** emacs-19.29: stderr-output (perror() for EADDRINUSE) of emacsserver
+is used for making client buffers. -bw/13-Sep-97
+*** (done:-bw/13-Sep-97: fixed in lisp/server.el::server-process-filter)
+
+ Bugfix: -bw/3-Sep-97.  Wrong constant AMAL_SEGMASK (used literal) for segments.
+
+ Bugfix: -bw/2-Sep-97 Amal_xpntr().  Now it returns 0 if it called
+with 0.
+
+ Bugfix: -bw/28-Aug-97 Asma_create_block_single() no
+init if compiled with -fromit-frame-pointer
+
+** Remove malloc-hunk memory manager.
+*** (done: -bw/23-Aug-97 all work is now done by amiga_smallo.c.  I made
+also alloc.c:VALIDATE_LISP_STORAGE a no-op.  Both makes some LISP
+packages faster.)
+
+** Problem: emacs-priority feature and common process for CLI and Emacs
+on some shells.
+*** (done: -bw/19-Aug-97 restore TaskPrio at exit(3))
+
+** file-truename (in files.el?) does not expand assigns.
+*** (done: -bw/18-Aug-97  function extended in list/amigaos-patch.el)
+
+** Add runtime switch to disable suspend-emacs=>spawn-subshell.
+ Ixemul may implement SIG(T)STP someday.  We need a switch or a
+separate function `spawn-subshell'.
+*** (done: -bw/??-Aug-97 new LISP boolean amiga-working-jobctrl)
+
+** Examine: File name completion did not append slash at end of paths
+like "~/X" (X is a directory and strlen(X)==1.)
+** Bug: (dired "~/") causes type error stringp,nil.
+*** (done: -bw/06-Aug-97 inherited [AMIGA] bug fixed in
+fileio.c::file_name_as_directory)
+
+** Amiga path problem: No different path syntax allowed for $HOME in
+emacsclient and emacsserver.  
+*** (done: -bw/05-Aug-97: added hack to emacsclient/emacserver. I hope
+there is someday an ixemul function to force UNIX path syntax or some
+special case for getenv("HOME"))
+
+** With -t option we have no stderr for subshell. What about simply
+dup2(1,2) in sys_subshell()?  It would maybe better to redirect stderr
+to the TTY.  But that must be wrong because it's not already done.
+*** (done: -bw/23-Jul-97:  call dup2(1,2) for -t)
+
+** Implement suspend-emacs with subshell (its useful for terminals).
+*** (done: -bw/21-Jul-97)
+
+** Amiga Paths let `gud' (?) or `gdb' (!) fail:
+{
+`/wrk/homes/bert/scratch/c/wrk:homes/bert/scratch/c/backtrace' has disappeared; keeping its symbols.
+Starting program: /wrk/homes/bert/scratch/c/wrk:homes/bert/scratch/c/backtrace 
+sh: /wrk/homes/bert/scratch/c/wrk:homes/bert/scratch/c/backtrace: not found
+} 
++ Expand assigns in paths to avoid "find-file" the same file twice.
+  This breaks also file locking. (Partly done: Needs noreq stuff)
+*** (done: -bw/18-Jul-97 We use always UNIX paths internally (Amiga
+paths (what a surprise) would break too many things!).  But Amiga
+paths may used in nearly all inputs like environment, passwd,
+symlinks.  We have even expansion of Amiga multi assigns in both paths
+of external commands and minbuffer completition .  [The last sentence
+is not true.  Expanding multiassigns in completion would be a
+misfeature.]
+
+** Look for mysterious huge allocated blocks. There was a 2.7MB block
+allocated (it's contents was partial an already killed buffer). The
+block stay allocated after killing all buffers. 
+*** (done: -bw/13-Jul-97 HAVE_ALLOCA/C_ALLOCA wasn't properly defined.
+The regex fail-stack had preallocated these large blocks to prevent
+memory leaks caused by C-g interrupts)
+
+** Special memory managment to avoid external fragmentation. (reserved
+preallocated arena for small objects is not sufficing.)  The garbage
+collector should capable to do this.
+*** (done: amiga_smalloc.c)
+
+** [FIXBUG] filelock.c: locking problems caused by mixing Amiga and
+UNIX path syntax.
+*** (done: -bw/1-Jul-97 (only tested for "short filenames" (CRCs in lock/))
+
+** The loadup.el is locally changed to make data dumping wich was not
+supported (oddly).
+*** (done: Inserting part of loadup.el from another distribution)
+
+** load_file  fails on Amiga paths.
+*** (done: bw/26-Jun-97 - Code added to function lread.c::complete_filename_p)
+
+** Support 32 bit PIDs. (currently only 26 bit. This works not on my
+memory ($DC00000-$EF7FFFF)). (Of my knowledge such high numbers are
+invalid as PIDs in UNIX)
+*** (done: PIDs are encoded as Lisp_String now)
+
+** Extend XPNTR() to deal with different memory "segments" (2 or 4).
+(Note: There is no need for a gap between such pages).
+*** (done: It uses now 4 24bit segments now. (should better 3bit/23bit?)
+
+** Don't write unused pure/malloc_hunk store to dumpfile. (At least for
+`pure' I can't see any problems causing by that).
+*** (done: It was no problem for `pure'.  For malloc_hunk there is now a new
+function amiga_malloc.c::forget_free_storage().)
+
+
+* CANCELLED:
+
+** Intui-Iconify: There are still crashes when doing deiconify (only
+via mouse?).  Sometimes the crash comes not immediate.
+*** cancelled-bw/10-Jul-98: This was because I trashed the EXTER
+interrupt server chain with my serial device (stupid me).  (CIA-B
+seems to generate that interrupt then clicking icons on workbench.)
+
+** We need a simple layer mechanism for sub windows. (Or maybe simple
+clip away all other subwindows when do the clear before
+resizing/moving)
+**** cancelled-bw/14-Jun-98: Use expose events now.
+
+** Make call to win__detach_clip_iwin() in XTupdate_end()
+user-configurable  -bw/01-Jun-98
+**** cancelled-bw/11-Jun-98: Now I detach the region only for inactive
+frames.
+
+** What about #define DOC DOC-tty/DOC-X/DOC-Intui for Makefile.in?
+**** no-bw/11-Jun-98: lib_src/make_docfile doesn't scan the .o files
+but the .c files.  Therefore whe have all function-comments in DOC.
+
+** Examine: Why the separate file src/x-list-fonts.c.  I guess it was
+created while merging 19.34 into 20.2 !? -bw/12-Mar-98
+*** this file is in fact part of baseline dist
+
+** Intui: Would using SuperBitmap windows speed up menus? -bw/16-May-98
+*** -bw/20-May-98: makes no difference
+
+** What about dragging vertical lines when scroll bars on the left?
+There was a fix in "gnu.emacs.bugs" recently.
+*** (cancelled-bw/17-May-98 Works in 20.2.92 ... seems I used the
+wrong Lisp load path (really stupid))
+
+** MBSK version of defun standard-display-european sets
+enable-multibyte-characters which is read only since Emacs-20.3
+*** (cancelled: Not true!  The error was caused by setting read-only
+type-break-mode)
+
+** MULTI_KBOARD for ARexx?  Or what about using lisp/server?
+(nonsense-bw/12-Mar-98)
+
+** It would be "better" to simulate the Xt code than plain X as we
+currently do.
+
+** Scrollbars must surrounded by a background area used by italic
+fonts.
+
+** Would be nice to have more feedback for mouse users (3D modeline,
+indicator for mouse sensitive text (maybe in window border or in mose
+sprite (urgs)))
+*** (cancelled: some LISP modes (e.g. Info-mode) do highlight mouse
+sensitive text already)
+
+** visible-bell does not work since 20.2
+ (not true.  Try it with another background color than withe!)
+
+** Bug: Ping-Pong frame higlight.  (Maybe we should generally forbid
+ActivateWindow(intuition) if no Emacs frame is the active window.
+Should I check the disabled focus code?)
+ (never happen again)
+
+** Since I merged xterm.c: When dragging modeline, only the first half
+of the last char is removed and redrawed.
+ (this proble is gone away)
+
+** gfx-clipping asserts may fail if the user do resize. Use stable
+window sizes or do retry or fail.
+
+** Doing AddClipRegion in update_begin instead of in every write may
+increase speed. 
+*** (cancelled: It's not needed to remove our clip region.  It does
+not disturb Intuition) <=NOTE-bw/10-Mar-98 Thats not the whole truth.
+It makes Intuition remarkable slow in cycling windows.
+
+** Add stack check or extend code to regex!?
+*** (cancelled: It does not really work and seams to disturb kb-input
+(mysterious))
+
+** amigaos.h: Remove #include <stdio.h> and recompile to make sure!
+*** (cancelled bw: wee must keep it, because it must include before
+"#define static")
+
+** ## Disable PTYs in amigaos.h if it does't work! ##
+ (cacelled bw/26-Aug-97: process-connection-type is used in
+"lisp/site-load.el" to disable pty(4))
+
+** Calling select() on "AUX:" reports always pending input. Because
+Emacs does polling as long as there is any pending input, Emacs
+consumes all free CPU time and stop processes with lower priority
+(gcc). (Workaround: Start "executive" or avoid AUX:) (I wrote an own
+aux handler because SDAUX: and descendants hangs sometimes with emacs)
+(cancelled bw/5-Aug-97: After updating from ixemul-46 to ixemul-47 the
+proble is gone)
+
+** Remove C-h translation.  Breaks the popular M-C-h (mark C function).
+*** (cancelled: On local console we can use ALT-C-h, because the meta-bit works.)
+
+** /'x/..' is reduced to '/' that is wrong for assigns. 'x:../' is ok.
+*** (cancelled: Simply use "x:../" (or sometimes "x:/").
+
+
+** Avoid casing stuff for XSET. To avoid disturbing ints by segbits
+assigned by XSET.  We could use 24 bit for ints and 26 bit for
+pointers. If no one uses int operations on pointers, this would work.
+  (NOTE: I don't consider this for a good idea.)
+
+** realloc-bug? dont't free memory on failure.
+
+** Reduce memory usage (is there a leak?).  Are there features we
+don't need.  We cannot share PURE segment on AmigaOS => Unfrequently
+used modules may removed from loadup.el. But beware of unacceptable
+module load times!)
+*** (canceled: since HAVE_ALLOCA is properly defined the memory usage
+is relative accepable.)
+
+** Choose reasonable default value for -prealloc (currently 0).
+*** (cancelled: 0 seems to be OK)
+
+** Bug: Calling emacsclient while the cursor is in minibuffer hangs.
+*** (cancelled: It works. Maybe it was a hallucination?)
+
+** Store pids like (FILE*) (currently in 4 byte Lisp_String).
+*** (cancelled: The string has garbage collection the Lisp_Internal_Stream
+not. That would be not easier.)
+
+
+* UNDONE:
+** speed up undumping() 
+*** (done: slurp in file whole to big buffer. should be undone maybe)
+**** (undone: Moved to structured dump file format to avoid bytewise
+reading.)
+
+
+* CRASH-LOG:
+
+** -bw/30-Dec-97: Endless loop in update_interval. (20.2)
+
+** 05-Oct-97: Abort + system freeze: after typing "I" (icon.library)
+in "alvo-mode".  Stack 70000 (extended, original 30000).
+
+** 14-Sep-97 Panic: in Amal_xsetpntr: invalid address (unknown
+segment) <0xde591bc> While unpatching loaded dumpfile. Seems to be
+code which depends on luck.
+
+** 13-Sep-97 Very often Illegal Instruction at end of dump stage
+(finding-doc-pointers).  Happens at most when make called from Amiga
+shell but not from Ksh nor Emacs.  The crash also always damaged some
+ixemul-47 structures freezing other ixmeul clients.
+
+** 20-Jun-97 09:10 Deadend-80...04.  Happen during moving cursor (or
+it was while deleting D a file?) in Dired on the large emacs src
+directory. Stack was 80000.  Powercache was running. (Assumed:Stack
+overflow?)
+
+** 1-Jul-97 04:20 Abort while tying 'e' in dired mode.  All mem was
+freed, but it was't possible to restart Emacs because it could not
+open his dump file (ixemul trashed?).  Stack was 200.000. (Assumed
+Stack overflow.)
+
+** 8-Jul-97 and earlier: Ixemul seems confused sometimes: The
+returvalue of our own malloc() is a automatic variable of the
+caller. Happened in amiga_dump::undump(): buf==data_path. datap_path
+was cleared (by Asma_sys_alloc()?). Emacs aborts after dumping with
+"XYZ isn't an EMACS dumpfile...".  (Maybe a bad program. Candidates
+are DirOpus-4(?)  and my own ixemul news software(!).)
+
+** 27-Jul-97: during garbage collection total system crash after 8
+hours uptime and running some nasty programs: System frozen and later
+deadend guru: 0x8000000E: ACPU_Format (Stack frame format error).
+ It needs perhaps some special sanity check to recognize coruppt Lisp
+lists/chains.
+
+
+Local variables:
+mode: outline
+paragraph-separate: "[ 	]*$"
+end:

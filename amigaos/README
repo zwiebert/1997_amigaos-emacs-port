@@ -1,0 +1,40 @@
+		Emacs for Amiga-OS.
+
+This directory contains files not really needed to build GNU Emacs on
+Amiga-OS.  Because we use ixemul library we can use configure and
+Makefile from the UNIX version (with a few patches however).
+
+Don't forget to read the text files.  There is at least one important
+configure option: --with-intui.  I have tried to make the Doc rather
+short.
+
+* Preliminaries
+
+To compile Emacs, you will need a GNU C compiler (gcc, ...), GNU
+binutils (ld, ...), GNU make and various basic UNIX shell commands
+(rm, mkdir, cp, install, ...).  Currently you can find that all at
+<ftp.ninemoons.com> (Look for GeekGadgets or ADE).
+
+If you want using Emacs on a window system:
+
+For X you need ADE-X, which can be found in the alpha directory of
+GeekGadgets project.
+
+For Intuition you need at least graphics.library-39.  That library is
+part of Amiga-OS version 3.0 or later versions.
+
+* Building and installing
+ See file Doc in this directory
+
+* How to get updates
+
+ I will upload diffs containing updates and fixes to my WWW homepage
+<home.in-brb.de/~bertw>.
+
+* Other files in this directory.
+
+ Doc - Short description for invocation, installing, compiling Emacs under AmigaOS
+ Hints - Some solutions for problems (I wrote it mainly for myself)
+ Todo - Things todo and already done or undone (Warning: My English is terrible)
+ examples - A directory with lisp (startup) files.  No sophisticated stuff. 
+

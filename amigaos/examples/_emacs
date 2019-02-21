@@ -1,0 +1,358 @@
+;; ~/.emacs - Emacs user startup
+;; experimental
+
+;; the following line requires a patched ixemul library (see
+;; amigaos/ixemul-exec.patch) to avoid hang
+(setq emacs-priority -1)
+
+;; config
+(if (fboundp 'hscroll-global-mode)
+    (hscroll-global-mode)) ;; enables automatic horizontal scrolling (also disable wrapping)
+
+;; Speedup Info: The menu-bar makes Info modem slow for large menus.
+;; This code is rather ugly.  I don't know a better way yet. -bw/24-Apr-98
+(when t
+(add-hook 'Info-mode-hook 
+	  (lambda ()
+	    (defun Info-menu-update ())
+	    (define-key Info-mode-map [menu-bar Info Menu\ item] nil)
+	    (define-key Info-mode-map [menu-bar Info Reference] nil)))
+)
+
+(add-hook 'c-mode-hook 'hs-minor-mode)
+
+(autoload 'sql-mode "sql-mode" "SQL major mode" t)
+(add-hook 'sql-mode-hook '(lambda () (setq tab-width 10)))
+
+;; hm--html (crap?)
+(if t ()
+  (autoload 'hm--html-mode "hm--html-mode" "HTML major mode." t)
+  (autoload 'hm--html-minor-mode "hm--html-mode" "HTML minor mode." t)
+  (or (assoc "\\.html$" auto-mode-alist)
+      (setq auto-mode-alist (cons '("\\.html$" . hm--html-mode) 
+				  auto-mode-alist)))
+
+  (autoload 'tmpl-expand-templates-in-buffer "tmpl-minor-mode"
+    "Expand all templates in the current buffer." t)
+
+  (autoload 'html-view-start-mosaic "html-view" "Start Xmosaic." t)
+  (autoload 'html-view-view-buffer 
+    "html-view"
+    "View the current buffer in Xmosaic."
+    t)
+  (autoload 'html-view-view-file 
+    "html-view"
+    "View a file in Xmosaic."
+    t)
+  (autoload 'html-view-goto-url
+    "html-view"
+    "Goto url in Xmosaic."
+    t)
+  (autoload 'html-view-get-display
+    "html-view"
+    "Get the display for Xmosaic (i.e. hostxy:0.0)."
+    t)
+  )
+
+;; Add a buffer index menu item (function menu) to "Search" menu
+(global-set-key [menu-bar search rule4] '("--" . nil))
+(global-set-key [menu-bar search imenu] '("Buffer Index" . imenu))
+
+(if (<= 20 emacs-major-version)
+    ;; Emacs-20
+    (if window-system (require 'latin-1))
+  ;; Emacs-19
+  (defun custom-set-variables (&rest args)
+    "Initialize variables according to user preferences.  
+
+The arguments should be a list where each entry has the form:
+
+  (SYMBOL VALUE [NOW])
+
+The unevaluated VALUE is stored as the saved value for SYMBOL.
+If NOW is present and non-nil, VALUE is also evaluated and bound as
+the default value for the SYMBOL."
+    (while args 
+      (let ((entry (car args)))
+	(if (listp entry)
+	    (let* ((symbol (nth 0 entry))
+		   (value (nth 1 entry))
+		   (now (nth 2 entry))
+		   (requests (nth 3 entry))
+		   (set (or (get symbol 'custom-set) 'set-default)))
+	      (put symbol 'saved-value (list value))
+	      (cond (now 
+		     ;; Rogue variable, set it now.
+		     (put symbol 'force-value t)
+		     (funcall set symbol (eval value)))
+		    ((default-boundp symbol)
+		     ;; Something already set this, overwrite it.
+		     (funcall set symbol (eval value))))
+	      (when requests
+		    (put symbol 'custom-requests requests)
+		    (mapcar 'require requests))
+	      (setq args (cdr args)))
+	  ;; Old format, a plist of SYMBOL VALUE pairs.
+	  (message "Warning: old format `custom-set-variables'")
+	  (ding)
+	  (sit-for 2)
+	  (let ((symbol (nth 0 args))
+		(value (nth 1 args)))
+	    (put symbol 'saved-value (list value)))
+	  (setq args (cdr (cdr args)))))))
+
+  ;;  (setq find-file-existing-other-name t)
+  )
+
+(setq find-file-visit-truename t) ;; avoid auto save (renaming) symlinks
+
+;; debug
+(defun edb-inet-daytime ()
+  "Network test"
+  (interactive)
+  (open-network-stream "daytime" "*Messages*" "localhost" "daytime")
+  nil)
+
+;; loading now
+;;(load "tex-site") ;; choose AucTeX
+(load "~bert/lib/emacs/lisp/adoc")
+(load "~bert/lib/emacs/lisp/emacs-debug")
+(load "~bert/.emacs-2") ;; byte compiled startup file
+(load "~bert/.emacs-3")
+;;(require 'ums)
+
+;; FIXME-bw: find other keybindings -bw/23-Oct-97
+(global-set-key [help f1] 'adoc-find-node-by-function)
+(global-set-key [help f2] 'adoc-find-struct)
+(global-set-key [help f3] 'adoc-find-define)
+(global-set-key [help f4] 'adoc-gg-find-struct)
+(global-set-key [help f5] 'adoc-gg-find-define)
+(global-set-key [H-tab] 'other-frame)
+(global-set-key [?\H-o] 'vera)		;abbrev expand
+
+(define-key emacs-lisp-mode-map [f8] 'edebug-next-mode)
+
+;; loading deferred
+(autoload 'alvo-mode "ami-lvo" nil t)
+(autoload 'rfc-view "rfc" nil t)
+(autoload 'forms-load-file "forms" nil t)
+(autoload 'forms-mode "forms" nil t)
+(autoload 'visit-dtags-table "dtags" nil t)
+(autoload 'doc-tag "dtags" nil t)
+(autoload 'dtags-search "dtags" nil t)
+(autoload 'list-dtags "dtags" nil t)
+(autoload 'dtags-apropos "dtags" nil t)
+(autoload 'make-dtags "dtags" nil t)
+
+(global-set-key "\C-Cd" '(lambda () "insert current date" (interactive)
+			   (let ((ts (current-time-string)))
+			     (princ (format "%02d-%s-%02d" 
+					    (string-to-number (substring ts 8 10))
+					    (substring ts 4 7)
+					    (string-to-number (substring ts 22 24)))
+				    (current-buffer)
+				    ))))
+(global-set-key "\C-Ct" '(lambda () "insert current date" (interactive)
+			   (let ((ts (current-time-string)))
+			     (princ (format "-bw/%02d-%s-%02d" 
+					    (string-to-number (substring ts 8 10))
+					    (substring ts 4 7)
+					    (string-to-number (substring ts 22 24)))
+				    (current-buffer)
+				    ))))
+(defun usr-lf-text ()
+"Turn all newlines in buffer to ASCII-LFs"
+(interactive)
+  (let 
+      ((first-cr nil) (first-lf nil) (nl "\C-M"))
+    (beginning-of-buffer)
+    (setq first-cr (search-forward "\C-M" nil t))
+    (beginning-of-buffer)
+    (setq first-lf (search-forward "\C-J" nil t))
+    (beginning-of-buffer)
+    (cond
+     ((and first-cr first-lf)		;^M^J or ^J^M (mixed is not supported)
+      (if (= (1+ first-cr) first-lf)
+	  (setq nl "\C-M\C-J")
+	(if (= (1+ first-lf) first-cr)
+	    (setq nl "\C-J\C-M"))))
+     (first-cr (setq nl "\C-M"))	;only ^M
+     )
+    (if nl (replace-string nl "\C-J"))))
+
+(defun usr-mime-to-ascii ()
+  "Translates (only german) MIME umlauts to 7bit equivalents."
+  (interactive)
+  (let ((case-replace nil) (case-fold-search t))
+    (beginning-of-buffer)
+    (replace-string "=c4" "Ae")
+    (beginning-of-buffer)
+    (replace-string "=d6" "Oe")
+    (beginning-of-buffer)
+    (replace-string "=dC" "Ue")
+    (beginning-of-buffer)
+    (replace-string "=e4" "ae")
+    (beginning-of-buffer)
+    (replace-string "=f6" "oe")
+    (beginning-of-buffer)
+    (replace-string "=fc" "ue")
+    (beginning-of-buffer)
+    (replace-string "=df" "ss")
+    (beginning-of-buffer)
+    (replace-string "=\n>" "")
+    (beginning-of-buffer)
+    (replace-string "=\n" "")
+    (beginning-of-buffer)
+    (replace-string "=3d" "=")
+     ))
+
+(defun usr-mime-to-iso1 ()
+  "Translates (only german) MIME umlauts to 8bit ISO-1 equivalents."
+  (interactive)
+  (let ((case-replace nil) (case-fold-search t))
+    (replace-string "=c4" "Ä")
+    (beginning-of-buffer)
+    (replace-string "=d6" "Ö")
+    (beginning-of-buffer)
+    (replace-string "=dC" "ü")
+    (beginning-of-buffer)
+    (replace-string "=e4" "ä")
+    (beginning-of-buffer)
+    (replace-string "=f6" "ö")
+    (beginning-of-buffer)
+    (replace-string "=fc" "ü")
+    (beginning-of-buffer)
+    (replace-string "=df" "ß")
+    (beginning-of-buffer)
+    (replace-string "=\n" "")
+    (beginning-of-buffer)
+    (replace-string "=3d" "=")
+     ))
+
+  ;; ==== global keybinding ===
+;; F keys:
+(global-set-key [f1] 'next-error)
+(global-set-key [f2] 'what-line)
+(global-set-key [f3] 'register-to-point)
+(global-set-key [f4] 'gud-print)
+(global-set-key [f5] 'dabbrev-expand)
+(global-set-key [f6] '(lambda () "narrow to next page" (interactive) 
+			(widen) (forward-char) (forward-page) (narrow-to-page)))
+(global-set-key [f7] '(lambda () "next tag" (interactive) 
+			(find-tag nil t)))
+(global-set-key [f8] 'gud-next)
+(global-set-key [f9] 'switch-to-buffer)
+;;(global-set-key [f10] 'other-window)
+
+(global-set-key [S-f1] 'compile)
+(global-set-key [S-f2] 'goto-line)
+(global-set-key [S-f3] 'point-to-register)
+(global-set-key [S-f4]  '(lambda () "compile emacs" (interactive)
+ (setq compile-command "cd /build/emacs-20.2/src; nice -n1 make -k 'CFLAGS= -g -O2 -m68030'")))
+(global-set-key [S-f5] '(lambda () "print text propierties" (interactive)
+			  (princ (text-properties-at (point)))))
+(global-set-key [S-f6] '(lambda () "narrow to previous page" (interactive)
+			  (widen) (backward-char) (backward-page) (narrow-to-page)))
+(global-set-key [S-f7] nil)
+(global-set-key [S-f8] '(lambda () "run cpp on buffer" (interactive)
+			  (shell-command-on-region (point-min) 
+						   (point-max) 
+						   "cpp")))
+
+(display-time) ;; enable modeline clock + mail flag (+ load-level (not on Amiga-OS))
+
+;; should called at very end
+(server-start)
+
+(when (and window-system (x-display-color-p))
+  (set-cursor-color "tomato"))
+
+(when window-system
+  (global-set-key [S-f9] 'list-buffers)
+  (global-set-key [S-f10] 'delete-window)
+
+  ;; paren
+  ;; hihglight matching paren
+  (require 'paren)
+  (if (fboundp 'show-paren-mode) (show-paren-mode));; needed since 20.2
+  )
+
+(if nil
+    (progn 
+      (setq send-mail-function 'smtpmail-send-it
+	    smtpmail-default-smtp-server "mail.in-brb.de"
+	    smtpmail-smtp-service "smtp"
+	    smtpmail-local-domain "in-brb.de"
+	    smtpmail-debug-info t)
+      (load-library "smtpmail")
+      (setq smtpmail-code-conv-from nil)
+      ;;(setq user-full-name "Bert Winkelmann")
+      nil))
+
+;; From Usenet:
+;;; Redefine indent-for-comment to kill the comment with negative prefix
+;;-;;(defadvice indent-for-comment (around kill-comment activate)
+;;-;;  "Kill the comment with negative prefix."
+;;-;;  (if (eq current-prefix-arg '-)
+;;-;;      (kill-comment nil)
+;;-;;    ad-do-it))
+
+(garbage-collect)
+;; ---- Appended by Emacs --------------
+(put 'narrow-to-page 'disabled nil)
+(put 'eval-expression 'disabled nil)
+(put 'narrow-to-region 'disabled nil)
+(put 'upcase-region 'disabled nil)
+(custom-set-variables
+ '(find-file-existing-other-name t)
+ '(w3-preferences-cancel-hook (quote nil) t)
+ '(w3-load-hook (quote nil))
+ '(font-lock-maximum-decoration (quote ((html-mode . 9) (c-mode . 1) (c++-mode . 1) (t . 1))))
+ '(w3-default-stylesheet (quote ""))
+ '(display-time-day-and-date nil)
+ '(amiga-working-killpg nil)
+ '(w3-use-menus (quote (file edit view go bookmark options buffers style emacs nil help)))
+ '(hebrew-holidays nil t)
+ '(w3-toolbar-type (quote both) t)
+ '(w3-image-mappings (quote (("image/x-xbitmap" . xbm) ("image/xbitmap" . xbm) ("image/xbm" . xbm) ("image/jpeg" . jpeg) ("image/gif" . gif) ("image/png" . png) ("image/x-fax" . g3fax) ("image/x-raster" . rast) ("image/windowdump" . xwd) ("image/x-icon" . icon) ("image/portable-graymap" . pgm) ("image/portable-pixmap" . ppm) ("image/x-pixmap" . xpm) ("image/x-xpixmap" . xpm) ("image/pict" . pict) ("image/x-rgb" . sgi) ("image/x-sgi" . sgi) ("image/x-macpaint" . macpt) ("image/x-targa" . tga) ("image/tiff" . tiff))))
+ '(url-honor-refresh-requests (quote t))
+ '(amiga-menu-font (quote ("Tupelo" . 12)))
+ '(url-privacy-level (quote (email)))
+ '(url-cookie-confirmation (quote nil))
+ '(c-basic-offset 2)
+ '(amiga-menu-font-style nil)
+ '(c-comment-continuation-stars "")
+ '(w3-delay-image-loads (quote t))
+ '(islamic-holidays nil t)
+ '(w3-toolbar-orientation (quote default) t)
+ '(w3-preferences-ok-hook (quote nil) t)
+ '(lazy-lock-stealth-time nil)
+ '(w3-source-file-hook (quote nil))
+ '(oriental-holidays nil t)
+ '(w3-mode-hook (quote nil))
+ '(font-lock-support-mode (quote ((c-mode . fast-lock-mode) (c++-mode . fast-lock-mode) (t . lazy-lock-mode))))
+ '(c-comment-only-line-offset (quote (0 . 0)))
+ '(general-holidays (quote ((holiday-fixed 1 1 "Neujahr") (holiday-fixed 5 1 "Tag der Arbeit") (holiday-fixed 10 3 "Tag der deutschen Einheit") (holiday-fixed 12 31 "Silvester"))) t)
+ '(all-christian-calendar-holidays t t)
+ '(process-connection-type t t)
+ '(w3-honor-stylesheets (quote t))
+ '(w3-preferences-default-hook (quote nil) t)
+ '(w3-preferences-setup-hook (quote nil) t)
+ '(blink-matching-delay 0.25)
+ '(visible-bell t)
+ '(user-mail-address "bertw@in-brb.de")
+ '(w3-netscape-compatible-comments (quote t))
+ '(display-time-24hr-format t)
+ '(dabbrev-case-fold-search nil)
+ '(global-font-lock-mode t nil (font-lock))
+ '(w3-user-colors-take-precedence (quote nil))
+ '(gnus-nntp-server "news.mevacom.de"))
+(custom-set-faces
+ '(info-xref ((t (:underline t :foreground "blue"))))
+ '(info-menu-5 ((t (:background "light grey"))))
+ '(modeline ((t (:inverse-video t))))
+ '(info-node ((t (:foreground "red")))))
+
+;;; Emacs/W3 Configuration
+(setq load-path (cons "~bert/emacs/lisp/w3" load-path))
+(require 'w3-auto "w3-auto")

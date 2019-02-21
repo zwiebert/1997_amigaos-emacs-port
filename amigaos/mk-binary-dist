@@ -1,0 +1,77 @@
+#! /bin/sh
+#
+#makes minimal binary dist for GNU-Emacs Amiga version
+#It uses hardcoded paths to keep it simple.
+#-bw/25-Nov-97
+
+#set -x
+
+vers=20.2.92
+docvers=$vers.1
+mach=m68k-amigaos
+
+#prefix for archive building
+ap=/ext/emacs_inst
+#prefix for installed files
+ip=/gg
+#prefix for storing archive
+tp=/ram
+
+#subdirectories prefixed by $ap or $ip
+bs=bin
+ds=share/emacs/${vers}
+es=libexec/emacs/${vers}/${mach}
+
+lisps=$ds/lisp
+etcs=$ds/etc
+
+enterdir () 
+{
+  cd ${1?"missing parameter for enterdir()"};
+  echo "Entering directory <`pwd`>"; 
+} 
+
+rm -rf $ap
+
+mkdir -p $ap/$bs $ap/$ds $ap/$ds/../site-lisp \
+ $ap/$es $ap/$lisps $ap/$lisps/term $ap/$etcs
+
+
+enterdir $ip/$bs
+install -s -m755 emacs emacsclient etags ctags b2m rcs-checkin $ap/$bs
+install -m644  .emacs_$vers*.data $ap/$bs
+
+
+enterdir $ip/$etcs
+install -m644 DOC-$docvers $ap/$etcs/DOC-$docvers
+
+enterdir $ip/$ds
+cp -R amigaos $ap/$ds/amigaos
+
+enterdir $ip/$es
+install -s -m755 [a-z]* $ap/$es/
+
+enterdir $ip/$lisps
+install -m644 site-load.el site-init.el loadup.el amigaos-patch.el $ap/$lisps/ 
+
+enterdir $ip/$lisps/term
+install -m644 amiga.el x-win.el x-win.elc x-intuition.el $ap/$lisps/term/
+
+enterdir $ap
+find -name '*.orig' -or -name '*~' | xargs rm -f
+tar --totals -vcf $tp/emacs-$vers-aos-inst.tar * 
+
+#rm -rf $ap
+rm -rf emacs-$vers-aos-inst.tgz emacs-$vers-aos-inst.tar.gz emacs.uue emacs.uue.split
+
+#gzip -9 emacs-$vers-aos-inst.tar
+#mv emacs-$vers-aos-inst.tar.gz emacs-$vers-aos-inst.tgz
+v emacs-$vers-aos-inst.tar*
+
+# uudecode + split
+#
+#uuencode emacs-$vers-aos-inst.tgz <emacs-$vers-aos-inst.tgz >emacs.uue
+#mkdir emacs.uue.split
+#enterdir emacs.uue.split
+#split -C95k ../emacs.uue
+

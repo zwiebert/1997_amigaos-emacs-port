@@ -1,0 +1,451 @@
+This file is part of the Amiga-IxEmul version of Emacs-19.34.
+(FIXME-bw: cleanup this file)
+(TODO-bw/12-Dec-97: make a texinfo file)
+
+Note: See also the file ./Doc for an up to date documentation of
+AmigaOS specific features.
+
+
+Misc
+====
+ You may report undocumented bugs via email to:
+Bert Winkelmann <bertw@knuut.de>
+
+Note: There are some bugs documented in the "todo" file.
+
+Please don't mail any feature requests because this is a limited
+version of an UNIX program but not an enhanced version. Sorry.
+
+
+Environment
+===========
+ EMACS_DEV - enables log messages for Emacs-implementors benefit.
+ EMACS_ASMA_LOG - contains filename to write some memory manager debug
+                  mesages.
+ DISPLAY - no longer used for an Intuition configured Emacs.  Emacs
+           starts now always in an Intuition window if neihter -nw nor
+           -t option is used:
+
+
+Window System
+=============
+
+Warning: The Intuition code is neither fully implemeted nor very
+reliable (at least the Workbench support seems to have dangerous (!)
+errors) -bw/12-Dec-97.
+
+ This Emacs may configured to work with Intuition as its window
+system. (FIXME-bw: currently it's not possible to choose the window
+system by configure script.  You have to define AMIGA_I_WINDOWS in
+src/s/amigaos.h and configure without (!) window system).
+  To keep compatibility with LISP packages, I have set the variable
+"window-system" to symbol 'x (which means X window system).
+
+** Things which work like in X for compatibility:
+*************************************************
+ - X font names must be used for commands like "set-default-font":
+   -Foundry-FamilyName-WeightName-Slant-SetwidthName-AddStyleName-PixelSize...
+   (like "-misc-fixed-bold-i---15" 
+           [meaning: fixed-system-font, bold-face, i=italic, height = 15]
+    or   "-amiga-LetterGothic-medium-r---12" 
+           [meaning: LetterGothic-12])
+
+ - X color names must be used in commands like "set-background-color":
+    (like "red", "lightgrey", "gold", "navy blue", "spring green")
+    (Try "help v x-colors RET" or "M-x list-colors-display RET".  Note:
+    This list is not the complete built-in list of known colors)
+
+  - The mouse buttons are not bound to work with 2 button Amiga
+standard mouse.  You need a 3 button mouse or you need to redefine the
+key maps by yourself.
+
+** Amiga input to emacs command mapping:
+****************************************
+
+  Amiga Input                      Emacs Command
+----------------------------------------------------------------------------
+click window close button        iconify that frame
+shift + click window close       delete-frame (or kill-emacs for last frame) (*
+drop on icon or window           find-file (note: works also for directories)
+
+*) I would prefer "kill-emacs-save-buffers", but I just send a
+window-delete event and Emacs interprets it.
+
+** Problems and unimplemented features:
+***************************************
+
+ - (setq visible-bell t) does not work proper on white background. (FIXME)
+
+ - Italic faces works not properly for editing (trashed by
+cursor). There is problem even in read-only text, if italic is
+followed by another style in the same line: The last italic character
+is trashed.
+
+ - The scroll-bar has xterm semantic and works page-wise (^L) (Try
+"help-k" followed dragging the scroll-bar handle for an explanation).
+Its furthermore not full implemented. (Sorry)
+
+ - The color data base is part of C source code.  Thus you cannot add
+any name at run time.
+
+
+Invoking
+========
+
+(Read the Emacs manual!)
+
+The -t option
+-------------
+
+"-t CON:": This doesn't allow resizing.  If you want "resizing" then
+start Emacs without "-t" either from a shell or shell-startup script.
+(but see topic "windowsize" below)
+
+"-t AUX:" This is one way to use Emacs on serial line, but its more
+powerful to invoke Emacs from inside a remote shell:
+
+ 1> newshell aux:
+
+ 1> copy s:shell-startup emacs-startup
+ 1> echo "bin:emacs" >>emacs-startup
+ 1> newshell aux: from emacs-startup
+
+ $ ksh </aux >/aux 2>&1
+
+Note: Using "ksh" instead CLI as remote shell allow using so called
+subshells in Emacs' shell buffer and also for suspend-emacs.  (A
+subshell starts usually much faster than a login shell.)
+
+
+emacs process stack size
+------------------------
+ Emacs uses usually between 20000 and 30000, but if your LISP code
+contains endless recursion it may reach upto 200KB:
+
+
+LISP-Error-Message: Variable binding depth exceeds max-specpdl-size
+0/9> ixstack -s
+  Usage   Total Program
+
+   3434  400000 app:gnu/libexec/emacs/19.29/m68k-amigaos/wakeup
+   5774  400000 app:gnu/libexec/emacs/19.29/m68k-amigaos/emacsserver
+ 200080  400000 app:gnu/bin/emacs
+ ^^^^^^
+
+(FIXME-bw: The regular expression (regex) code uses alloca(3).  I'm
+not sure whether it needs some stack extending code or a bigger stack
+like 60000 would suffice.  (Compiling regex.c without HAVE_ALLOCA
+causes preallocate 2.7MB memory for `fail-stack'))
+
+subprocess stack
+----------------
+  Subprocesses inherit the stack size from the value which was used to
+start Emacs.  Here is a workaround to decrease the stack size of
+subprocesses:
+
+1> bin:ixstack 250000 bin:emacs
+1> stack 20000
+1> bin:emacs
+
+Emacs itself runs now with 250000 byte stack (20000 bytes are wasted).
+The subprocesses (like emacs-server, wakeup, shell, compilation) are
+started with 20000 bytes.  Note: Don't forget to use ixstack on other
+stack hungry programs too (cc1plus, ld, ...).
+
+
+Amiga specific boolean LISP variables
+======================================
+
+(The values between square brackets are the default values)
+* amiga-working-killpg - Tells Emacs about implemented killpg(3). [nil]
+* amiga-working-job-ctrl - Tells Emacs about implemented SIGTSTP. [nil]
+* amiga-paths - Enable Amiga path syntax. [t]
+* amiga-expand-path - Enable expanding volumes in `substitute-in-file-name'. [nil]
+* amiga-exp-use-usg-jobctrl - Experimental code. Don't use it! [nil].
+
+See the online help for more information (type `<HELP> v amiga- <TAB>')!
+
+* find-file-existing-other-name  - (See online  help) [nil]
+  (Its useful on Amiga if you use assigns together with `next-error')
+
+* process-connection-type - (See online help) [nil] 
+  (Emacs seems to have problems with pty(4) implemented by ixemul-47.
+ You would see lots of ^M in the Shell buffer when setting it to `t'.
+  Sending EOF via pty(4) seems not to work if "l:fifo.handler" runs
+  with priority higher than the shell!)
+
+
+Features of this Amiga version of GNU Emacs 19.34:
+##################################################
+
+Process priority
+================
+
+Note: This feature is currently disabled. You can reanable it in
+`lisp/site-init.el'
+
+This documents the current configuration of Emacs.  You can
+reconfigure it.  See the online help for `emacs-priority'.
+
+The Emacs main process increments its process scheduling priority by
+one.  This change is not inherited to subprocesses like compilation,
+shell-command, inferior shell.
+
+If you prefer that Emacs keeps the inherited priority but the
+subprocesses should run with a priority decremented by 1 you have to
+use the nice(1) command like this:
+
+$ nice -n1 emacs 
+
+The nice command is part of GeekGadgets. (FIXME-bw: The problem with
+nice(1) is: it cannot restore the old priority when returning to an
+Amiga-CLI). You may also use `ChangeTaskPri -1' or the priority field
+of ToolManager if you start Emacs from there.
+
+If you prefer no priority change at all then you have to remove the
+`emacs-priority' setting in "lisp/site-init.el" and make a redump (see
+below).
+
+Note: On AmigaOS the priority feature is disabled for the batch
+(noninteractive) mode.  The priority is also restored before exiting.
+
+FIXME-bw: This feature works not really satisfying.  Some LISP
+packages are running too long (hide-ifdefs, calendar, byte-compile,
+Gnus).
+
+
+file path syntax
+================
+
+Emacs uses UNIX paths because we have `ixemul.library' which
+allow us to use various ELisp front ends from the UNIX world (cvs,
+diff, gcc, ...).
+
+Amiga path syntax is supported for:
+ - finding files
+ - loading ELISP files
+ - $HOME (emacs, emacsserver, emacsclient)
+ - inside the password file.
+ - (file locking mechanism)
+
+Amiga path syntax is not supported:
+ - in $PATH
+ - by ELISP packages (`M-x compile "cd /src; make"')
+
+Note: Emacs converts Amiga paths syntax in user input as soon as
+possible to UNIX syntax.  Therefore all output (like in
+`list-processes' uses UNIX syntax always).
+
+A short list of accepted path syntax:
+         
+UNIX syntax:
+   /         -  root directory (contains volumes, FTP hosts)
+   /abc:     -  ftp with login `ange-ftp-default-user', $USER or `whoami`. (*
+   /mario@zz:/pub/wc  - FTP path with different user name.
+   /wrk/     -  Volume or assign `wrk'  (UNIX syntax).
+   ~/        -  Users home directory.
+   ~luigi/   -  Home directory of user `luigi'.
+
+   $MAIL/    -  The path contained in environment variable `MAIL'.
+
+*) Note: ange-ftp needs pty(4) and ftp(1) to work.  Please fetch the
+GNU-Inetutils and the fifo-handler-38.4 from your preferred
+Geek-Gadget mirror site.  You have to set the LISP variable
+`process-connection-type' to t and run l:fifo.handler to enable pty(4)
+procces-I/O.
+
+Amiga syntax depends on the 2 config variables `amiga-paths' and
+`amiga-expand-path':
+
+If `amiga-paths' is non `nil':
+   wrk:      -  Volume or assign `wrk'.
+   :         -  Current volume.
+
+If `amiga-expand-path' and `amiga-paths' are non `nil':
+  /abc/../  -  root directory or "sometimes" parent of assign `abc'.
+  abc:../   -  Same like "/abc/../" using mixed syntax.
+
+The environment variable HOME [/sys] is translated to UNIX syntax if
+its not already.  This avoids problems with the `cd' command of
+`compile' and inferior UNIX shells. (misfeature?)
+
+
+Console/Terminal
+================
+
+change font
+-----------
+ Emacs has a builting function `amiga-set-font'.  That works for CON:
+windows.  (Note: When exit emacs, the original font will restored.
+However, we preseve any font change made by C:SetFont in a subshell
+created by `suspend-emacs'.
+
+change windowsize
+-----------------
+ When using -t/--terminal option (like bin:emacs -t con:") Emacs does
+not notify any size changes of its console window.  A workaround would
+be using "c:setfont" in a subshell created by `suspend-emacs'.
+
+termcap
+-------
+ This Emacs version provides default values for both environment
+variables TERM [amiga] and TERCAP [a complete entry labeled "amiga"
+for console].  This means you don't really need to define TERM nor
+TERMCAP.
+
+But usually you need the environment variables TERM, TERMCAP and a
+proper termcap file because there are other programs which wanted it.
+Here is the termcap entry working on my machine:
+
+ Amiga termcap by Kent Polk and David Gay
+AA|amiga|Amiga ANSIo:\
+   :co#89:li#33:am:bs:bw:MT:\
+   :AL=\E[%dL:DC=\E[%dP:DL=\E[%dM:DO=\E[%dB:IC=\E[%d@:\
+   :LE=\E[%dD:RI=\E[%dC:SF=\E[%dS:SR=\E[%dT:UP=\E[%dA:\
+   :ae=\017:al=\E[L:as=\016:bl=\007:bt=\E[Z:cd=\E[J:ce=\E[K:cl=\E[H\E[J:\
+   :cm=\E[%i%d;%dH:dc=\E[P:dl=\E[M:do=\E[B:ho=\E[H:ic=\E[@:is=\E[20l:\
+   :k1=\2330~:k2=\2331~:k3=\2332~:k4=\2333~:k5=\2334~:\
+   :k6=\2335~:k7=\2336~:k8=\2337~:k9=\2338~:k0=\2339~:\
+   :km:kb=\177:kD=\010:kd=\233B:kl=\233D:kr=\233C:ku=\233A:le=\233D:\
+   :mb=\E[7;2m:md=\E[1m:me=\E[0m:mh=\E[2m:mk=\E[8m:mr=\E[7m:nd=\E[C:nl=\E[B:\
+   :rs=\Ec:se=\E[0m:sf=\E[S:so=\E[7m:sr=\E[T:ue=\E[0m:up=\E[A:us=\2334m:\
+   :ve=\E[\040p:vi=\E[\060\040p:xn:
+
+You can copy it to a file, let TERMCAP point to this file and set TERM
+to "amiga".  Its also possible to copy the above termcap entry
+directly to env:TERMCAP (untested).
+
+<term>.el
+---------
+ There is a file "lisp/term/amiga.el" which assigns symbols to the
+function + arrow keys.  This overwrites parts of the "amiga" termcap
+entry.  The defined symbols are f1...f10, S-f1...S-f10, Help, left,
+right, up, down, S-left, S-right, S-up, S-down, S-tab.  The shifted
+arrow keys are bound to the not existent keys: prior, next, begin,
+end.
+
+"amiga.el" supports function keys introduced with both "\e[" or
+"\233".
+
+Note: The file "amiga.el" is only used if your environment variable TERM is
+set to "amiga".  If you use a different terminal name you could try to
+copy "amiga.el" and edit.
+
+Problematic keys
+----------------
+
+I have the following in "/gg/lib/emacs/site-lisp/site-start.el":
+
+  ;; Swap DEL and Backspace
+  (keyboard-translate ?\C-h ?\C-?)
+  (keyboard-translate ?\C-? ?\C-d)
+  ;; Help key ("\C-h" (aka Backspace) is disabled now (see above))
+  (global-set-key [help] 'help-command)
+  (global-set-key [help help] 'help-for-help)
+  ;; C-c => C-g ; C-z => C-c
+  (keyboard-translate ?\C-z ?\C-c)
+  (keyboard-translate ?\C-c ?\C-g)
+
+(The entire file is in the example directory.  If you have any
+problems then read the file etc/FAQ (M-x help F))
+
+
+Compiling, Installation, Dumping.
+################################
+
+(FIXME-bw/29-Nov-97: It's stupid to describe how to applying the diff
+which contains this document)
+
+Some differences to standard behavior as described in
+`../README' and `../INSTALL'.
+
+Configuration, Compilation, Dumping, Installation:
+==================================================
+
+Assuming you have all of the following things:
+
+ - the baseline (non-Amiga) distribution
+ - the diff patch file containing the Amiga specific changes
+ - an assign "dist:" containing the dist archive and the patch file
+ - an assign "src:" for the source
+ - an assign "build:" for building  (needs ~ 10 MB free space with "-g")
+ - an assign "gg:" for installing 
+ - the GG-tools find, ksh, tar, patch, make, install, gcc + libs,
+   xargs, less, rm, mkdir
+
+... then you can make it like this:
+
+1> ksh
+$
+$ ### If you have already the Amiga source then skip the first part.
+$
+$ ### unarchive and patch the source
+$ cd /src
+$ tar -xzf /dist/emacs-19.34.tar.gz
+$ patch -p2 </dist/emacs-19.34-amigaos.diffs
+$ ### You better look after any rejected patches
+$ find -name '*.rej' | xargs less
+$ find -name '*.orig' | xargs rm -f
+$ rm emacs-19.34/lisp/term/x-win.elc
+$
+$ ### You have now the Amiga source.
+$
+$ ### configure, compile (for 60030) and dump
+$ mkdir /build/emacs-19.34 ; cd /build/emacs-19.34
+$ ./configure m68k-amigaos --prefix=/gg --srcdir=/src/emacs-19.34
+$ make -k 'CFLAGS= -g -O2 -m68030'   # If you got "error:register spilled" try "-O"
+$
+$ ### install data and stripped binaries
+$ make -k 'INSTALL_PROGRAM=/bin/install -s -m755' install
+$
+
+The result of dumping stage is a data dump file called
+EMACS-DATA. (The executable temacs is unchanged.)
+
+Warning: If the program name is "temacs" then it doesn't load the
+installed data dump file, but the file /PROGDIR/../EMACS-DATA.  This
+allows testing the uninstalled temacs. (XXX: `temacs' should also use
+its own `DOC' file!)
+
+For Programmers:
+ * You can enable all sanity checks in the amiga
+specific modules (storage manager and dumper) by compiling with
+-DFULLDEBUG.  Some checks are rather run time expensive (especially
+the postcondition check in Amal_xpntr()), so by default "only" the
+preconditions of not static functions are checked.  With defined
+FULLDEBUG the storage manager also fills the storage like Mungwall it
+would do (DEADF00D,DEADBEAF).
+
+ * The dump stage creates a file "amiga_dump.cands" which shows
+possible unpatched pointers and pointers referring outside of process.
+You can use "amigaos/find-sym.pl" to print the symbolic names of those
+pointer objects.  This program requires perl-5 and nm(1).
+
+
+Dump again:
+===========
+
+If you have edited `/src/emacs-19.34/lisp/site-load.el' simply run
+`make' `from /build/emacs-19.34/'.
+
+[ Note: The makefile depends on time stamp of a directory (lisp/).  If
+you use a symbolic link for that, you should also have a `make' which
+reference the link to find the correct time stamp. (the dump targets
+are EMACS-DATA, DOC and DOC-19.34-1 in etc/. We have to delete it
+manually to enforce a remake using a broken make program or broken libc.a.) ]
+
+	
+Dump by hand:
+=============
+
+Usage:  temacs [-pure N] -nl -batch -l loadup dump
+
+ * You must have a directory `/PROGDIR/../etc'. (FIXME).
+
+ * You must preserve the order of the arguments.
+
+PURE option is useful if you got an error message while dumping.  The
+error message will tell you to increase size of PURE [40000].  (Note:
+There is no need to decrease the pure size value because that will be
+done by an automatic already.)
+

@@ -1,0 +1,15 @@
+
+dump_file ::= ADMP_MAGIC_COOKIE sizes hunk_block{3} smalloc_block ADMP_EOF_COOKIE
+           ;
+
+sizes ::= TEXT_SIZE DATA_SIZE BSS_SIZE PURE_SIZE
+
+hunk_block ::= STRUCT-DUMPED_HUNK k_initial hunk_data k_end
+            ;
+
+hunk_data ::= STRUCT-RAW_DATA raw-data
+            |  STRUCT-SKIP_DATA
+             ;
+
+smalloc_block ::=
+
